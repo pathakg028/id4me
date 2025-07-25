@@ -3,6 +3,7 @@ import { increment, decrement, incrementByAmount } from './features/counter/coun
 import type { RootState } from './app/store';
 import ProgressBar from './components/ProgressBar';
 import MobileVerification from './pages/MobileVerification';
+import ProfileForm from './components/ProfileForm';
 
 function App() {
   const count = useAppSelector((state: RootState) => state.counter.value);
@@ -17,7 +18,9 @@ function App() {
       <button onClick={() => dispatch(incrementByAmount(5))}>Increment by 5</button>
 
       <ProgressBar className='mb-10' />
-      <MobileVerification />
+      <MobileVerification className='mb-10' />
+
+      <ProfileForm className='mb-10' />
 
     </div>
   );
