@@ -1,0 +1,9 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "mobile": "1234567890",
+            "verified": false
+        }
+    ]
+}
