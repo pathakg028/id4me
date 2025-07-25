@@ -26,8 +26,12 @@ export const verifyMobile = createAsyncThunk(
             } else {
                 throw new Error("Mobile number not found");
             }
-        } catch (error: any) {
-            return rejectWithValue(error.message);
+        } catch (error: unknown) {
+            let message = "An error occurred";
+            if (error instanceof Error) {
+                message = error.message;
+            }
+            return rejectWithValue(message);
         }
     }
 );
