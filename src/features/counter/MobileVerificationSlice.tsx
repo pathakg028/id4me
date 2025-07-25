@@ -38,8 +38,19 @@ export const verifyMobile = createAsyncThunk(
 
 const mobileVerificationSlice = createSlice({
     name: "mobileVerification",
-    initialState,
+    initialState: {
+        mobile: "",
+        verified: false,
+        loading: false,
+        error: null,
+    } as MobileVerificationState,
     reducers: {
+        verifyMobileReducer: (state, action) => {
+            // Verification logic
+        },
+        resetVerification: (state) => {
+            state.verified = false; // Reset verified state
+        },
         setMobile(state, action) {
             state.mobile = action.payload;
         },
@@ -62,5 +73,5 @@ const mobileVerificationSlice = createSlice({
     },
 });
 
-export const { setMobile } = mobileVerificationSlice.actions;
+export const { setMobile, verifyMobileReducer, resetVerification } = mobileVerificationSlice.actions;
 export default mobileVerificationSlice.reducer;
