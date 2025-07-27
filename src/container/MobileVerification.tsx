@@ -8,6 +8,8 @@ import './MobileVerification.css';
 import ProfileForm from '../components/ProfileForm';
 import Input from '../components/Input';
 import OTPInput from '../components/OTPInput';
+import { useMobileValidation } from '../hooks/useMobileValidation';
+import { useDebounce } from '../hooks/useDebounce';
 
 interface MobileVerificationProps {
   className?: string;
@@ -38,14 +40,33 @@ function MobileVerification({ className }: MobileVerificationProps) {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Mobile form
+  // Mobile form with validation
   const {
     register: registerMobile,
     handleSubmit: handleSubmitMobile,
     setValue: setMobileValue,
+    watch: watchMobile,
     formState: { errors: mobileErrors },
   } = useForm<MobileFormValues>({
     defaultValues: { mobile: localStorage.getItem('mobile') || '' },
+  });
+
+  // Watch mobile input for real-time validation
+  const currentMobile = watchMobile('mobile') || '';
+
+  // Debounce mobile input for API calls
+  const debouncedMobile = useDebounce(currentMobile, 500);
+
+  // Mobile validation hook
+  const {
+    isValid: isMobileValid,
+    error: mobileValidationError,
+    isValidating: isMobileValidating,
+  } = useMobileValidation(currentMobile, {
+    debounceDelay: 500,
+    onValidationChange: (isValid, error) => {
+      console.log('Mobile validation:', { isValid, error });
+    },
   });
 
   useEffect(() => {
@@ -60,17 +81,31 @@ function MobileVerification({ className }: MobileVerificationProps) {
     }
   }, [countdown]);
 
-  // Fake API: Send OTP
-  const sendOtp = (mobileNumber: string) => {
+  // Auto-save valid mobile to localStorage
+  useEffect(() => {
+    if (isMobileValid && debouncedMobile) {
+      localStorage.setItem('mobile', debouncedMobile);
+    }
+  }, [isMobileValid, debouncedMobile]);
+
+  // Fake API: Send OTP with debounced validation
+  const sendOtp = async (mobileNumber: string) => {
     if (!mobileNumber || mobileNumber.length !== 10) {
       setOtpError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
+    if (!isMobileValid) {
+      setOtpError(
+        mobileValidationError || 'Please enter a valid mobile number'
+      );
       return;
     }
 
     setIsLoading(true);
     setOtpError('');
 
-    // Simulate API call
+    // Simulate API call with longer delay for realism
     setTimeout(() => {
       console.log(`🔐 OTP sent to ${mobileNumber}: 123456`);
       setOtpSent(true);
@@ -102,10 +137,16 @@ function MobileVerification({ className }: MobileVerificationProps) {
     }, 1500);
   };
 
-  // Step 1: Mobile submission
+  // Step 1: Mobile submission with validation
   const onMobileSubmit = (data: MobileFormValues) => {
+    if (!isMobileValid) {
+      setOtpError(
+        mobileValidationError || 'Please enter a valid mobile number'
+      );
+      return;
+    }
+
     setPhone(data.mobile);
-    localStorage.setItem('mobile', data.mobile);
     sendOtp(data.mobile);
   };
 
@@ -182,48 +223,105 @@ function MobileVerification({ className }: MobileVerificationProps) {
       </div>
 
       <div className="step-container">
-        {/* STEP 1: Mobile Verification */}
+        {/* STEP 1: Mobile Verification with Debounced Validation */}
         {currentStep === 1 && (
           <div>
             {!otpSent ? (
-              /* Mobile Number Input */
+              /* Mobile Number Input with Real-time Validation */
               <form onSubmit={handleSubmitMobile(onMobileSubmit)}>
                 <label className="block mb-2 font-medium text-left">
                   Mobile Number
-                  <Input
-                    type="tel"
-                    placeholder="Enter your mobile number"
-                    {...registerMobile('mobile', {
-                      required: 'Mobile number is required',
-                      pattern: {
-                        value: /^\d{10}$/,
-                        message: 'Enter a valid 10-digit mobile number',
-                      },
-                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                        setMobileValue('mobile', e.target.value);
-                        setPhone(e.target.value);
-                      },
-                    })}
-                    ref={(el) => {
-                      inputRef.current = el;
-                      // @ts-ignore
-                      registerMobile('mobile').ref(el);
-                    }}
-                    className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-green-400"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="tel"
+                      placeholder="Enter your mobile number"
+                      {...registerMobile('mobile', {
+                        required: 'Mobile number is required',
+                        pattern: {
+                          value: /^\d{10}$/,
+                          message: 'Enter a valid 10-digit mobile number',
+                        },
+                        onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                          const value = e.target.value
+                            .replace(/[^0-9]/g, '')
+                            .slice(0, 10);
+                          setMobileValue('mobile', value);
+                          setPhone(value);
+                        },
+                      })}
+                      ref={(el) => {
+                        inputRef.current = el;
+                        // @ts-ignore
+                        registerMobile('mobile').ref(el);
+                      }}
+                      className={`
+                        w-full border border-gray-300 rounded-md p-2 mb-2 
+                        focus:outline-none focus:ring-2 focus:ring-green-400
+                        ${mobileValidationError ? 'border-red-500' : ''}
+                        ${isMobileValid && currentMobile.length === 10 ? 'border-green-500' : ''}
+                      `}
+                    />
+
+                    {/* Loading indicator for validation */}
+                    {isMobileValidating && currentMobile.length >= 3 && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                      </div>
+                    )}
+                  </div>
+                  {/* Real-time validation feedback */}
+                  {currentMobile.length > 0 && !isMobileValidating && (
+                    <div className="mt-1">
+                      {mobileValidationError ? (
+                        <p className="text-red-500 text-sm flex items-center">
+                          <span className="mr-1">❌</span>
+                          {mobileValidationError}
+                        </p>
+                      ) : isMobileValid ? (
+                        <p className="text-green-500 text-sm flex items-center">
+                          <span className="mr-1">✅</span>
+                          Valid mobile number
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
                 </label>
+
                 {mobileErrors.mobile && (
                   <p className="text-red-500 mb-2">
                     {mobileErrors.mobile.message}
                   </p>
                 )}
-                <Button type="submit" disabled={isLoading} className="w-full">
+
+                <Button
+                  type="submit"
+                  disabled={
+                    isLoading ||
+                    !isMobileValid ||
+                    isMobileValidating ||
+                    currentMobile.length !== 10
+                  }
+                  className="w-full"
+                >
                   {isLoading ? 'Sending OTP...' : 'Send OTP'}
                 </Button>
+
                 {otpError && <p className="text-red-500 mt-4">{otpError}</p>}
+
+                {/* Helpful hints */}
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-blue-800 text-sm">
+                    💡 <strong>Tips:</strong>
+                  </p>
+                  <ul className="text-blue-700 text-sm mt-1 list-disc list-inside">
+                    <li>Enter a 10-digit Indian mobile number</li>
+                    <li>Number should start with 6, 7, 8, or 9</li>
+                    <li>We'll check if it's already registered</li>
+                  </ul>
+                </div>
               </form>
             ) : (
-              /* OTP Verification */
+              /* OTP Verification Section */
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">
                   Verify Your Mobile

@@ -2,7 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { profileFormSchema } from '../utils/useZodvalidationProfile';
+import { profileFormSchema } from '../utils/profileFormValidation';
 import { z } from 'zod';
 import {
   setProfileForm,
@@ -100,7 +100,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
       </div>
       <button
         type="submit"
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
         disabled={loading}
       >
         {loading ? 'Submitting...' : 'Submit'}

@@ -2,7 +2,7 @@
     "users": [
         {
             "id": 1,
-            "mobile": "1234567890",
+            "mobile": "",
             "verified": false
         }
     ]
