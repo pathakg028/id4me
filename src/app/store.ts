@@ -1,7 +1,7 @@
 import { configureStore, type ThunkAction, type Action } from '@reduxjs/toolkit';
 // Update the import path if your counterSlice is located elsewhere, for example:
-import MobileVerificationSlice from "../features/counter/MobileVerificationSlice";
-import ProfileFormSlice from "../features/counter/ProfileFormSlice"; // Update the path as needed
+import MobileVerificationSlice from "../reducer/slices/MobileVerificationSlice";
+import ProfileFormSlice from "../reducer/slices/ProfileFormSlice"; // Update the path as needed
 
 export const store = configureStore({
     reducer: {
