@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import Button from '../components/Button';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import PasswordInput from '../components/PasswordInput';
+import { validatePassword } from '../utils/passwordFieldValidation';
 import {
   verifyMobile,
   resetVerification,
@@ -41,6 +42,8 @@ function MobileVerification({ className }: MobileVerificationProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswordNav, setShowPasswordNav] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -56,9 +59,30 @@ function MobileVerification({ className }: MobileVerificationProps) {
 
   // Step 3: Password submit
   const onPasswordSubmit = () => {
-    setShowPasswordNav(true);
-    setShowWelcome(true);
+    const pwError = validatePassword(password);
+    const cpwError = !confirmPassword
+      ? 'Please confirm your password'
+      : password !== confirmPassword
+        ? 'Passwords do not match'
+        : '';
+
+    setPasswordError(pwError);
+    setConfirmPasswordError(cpwError);
+
+    if (!pwError && !cpwError) {
+      setShowPasswordNav(true);
+      setShowWelcome(true);
+    }
   };
+
+  function handleSubmitPassword(
+    onPasswordSubmit: () => void
+  ): React.MouseEventHandler<HTMLButtonElement> {
+    return (e) => {
+      e.preventDefault();
+      onPasswordSubmit();
+    };
+  }
 
   const handleNext = () => setCurrentStep((prev) => prev + 1);
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
@@ -175,11 +199,13 @@ function MobileVerification({ className }: MobileVerificationProps) {
                   label="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  error={passwordError}
                 />
                 <PasswordInput
                   label="Confirm Password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  error={confirmPasswordError}
                 />
                 {password &&
                   confirmPassword &&
