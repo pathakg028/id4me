@@ -3,11 +3,9 @@ import { useForm } from 'react-hook-form';
 import Button from '../components/Button';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import PasswordInput from '../components/PasswordInput';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import { validatePassword } from '../utils/passwordFieldValidation';
-import {
-  verifyMobile,
-  resetVerification,
-} from '../reducer/slices/MobileVerificationSlice';
+import { verifyMobile } from '../reducer/slices/MobileVerificationSlice';
 import './MobileVerification.css';
 import ProfileForm from '../components/ProfileForm';
 import Input from '../components/Input';
@@ -86,15 +84,6 @@ function MobileVerification({ className }: MobileVerificationProps) {
 
   const handleNext = () => setCurrentStep((prev) => prev + 1);
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
-
-  function handleSubmitPassword(
-    onPasswordSubmit: () => void
-  ): React.MouseEventHandler<HTMLButtonElement> {
-    return (e) => {
-      e.preventDefault();
-      onPasswordSubmit();
-    };
-  }
 
   return (
     <div
@@ -201,6 +190,7 @@ function MobileVerification({ className }: MobileVerificationProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   error={passwordError}
                 />
+                <PasswordStrengthIndicator password={password} />
                 <PasswordInput
                   label="Confirm Password"
                   value={confirmPassword}
@@ -239,24 +229,14 @@ function MobileVerification({ className }: MobileVerificationProps) {
               </div>
             )}
             <div className="navigation-buttons mt-4 flex flex-col sm:flex-row gap-2 justify-between">
-              {showPasswordNav && !showWelcome && (
-                <div className="navigation-buttons mt-4 flex flex-col sm:flex-row gap-2 justify-between">
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    onClick={handleBack}
-                    className="w-full sm:w-auto"
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    type="button"
-                    className="w-full sm:w-auto"
-                    onClick={handleNext}
-                  >
-                    Next
-                  </Button>
-                </div>
+              {showWelcome && (
+                <Button
+                  type="button"
+                  className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 mt-4"
+                  onClick={handleBack}
+                >
+                  Get Started
+                </Button>
               )}
             </div>
           </div>
