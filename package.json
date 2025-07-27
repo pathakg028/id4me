@@ -9,7 +9,9 @@
     "test:watch": "jest --watch",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:watch": "vitest watch --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",

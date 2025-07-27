@@ -1,0 +1,33 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Button Component > Snapshots > matches snapshot for danger variant 1`] = `
+<button
+  class="py-2 px-4 rounded-md font-medium focus:outline-none transition-colors bg-red-500 text-white hover:bg-red-600 "
+>
+  Danger
+</button>
+`;
+
+exports[`Button Component > Snapshots > matches snapshot for primary variant 1`] = `
+<button
+  class="py-2 px-4 rounded-md font-medium focus:outline-none transition-colors bg-green-500 text-white hover:bg-green-600 "
+>
+  Primary
+</button>
+`;
+
+exports[`Button Component > Snapshots > matches snapshot for secondary variant 1`] = `
+<button
+  class="py-2 px-4 rounded-md font-medium focus:outline-none transition-colors bg-gray-500 text-white hover:bg-gray-600 "
+>
+  Secondary
+</button>
+`;
+
+exports[`Button Component > Snapshots > matches snapshot with custom className 1`] = `
+<button
+  class="py-2 px-4 rounded-md font-medium focus:outline-none transition-colors bg-green-500 text-white hover:bg-green-600 custom"
+>
+  Custom
+</button>
+`;

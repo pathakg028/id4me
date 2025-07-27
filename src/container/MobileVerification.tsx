@@ -134,7 +134,7 @@ function MobileVerification({ className }: MobileVerificationProps) {
                   className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition-colors"
                   disabled={loading}
                 >
-                  {loading ? 'Verifying...' : 'Verify'}
+                  {loading ? 'Verifying...' : 'send OTP'}
                 </Button>
                 {error && <p className="text-red-500 mt-4">{error}</p>}
               </>
