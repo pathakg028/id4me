@@ -22,11 +22,21 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
 
   // Refs for keyboard navigation
   const firstInputRef = useRef<HTMLInputElement>(null);
-  const fullNameRef = useRef<HTMLInputElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const dobRef = useRef<HTMLInputElement>(null);
-  const genderRef = useRef<HTMLSelectElement>(null);
-  const submitRef = useRef<HTMLButtonElement>(null);
+  const fullNameRef = useRef<
+    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
+  >(null!);
+  const emailRef = useRef<
+    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
+  >(null!);
+  const dobRef = useRef<
+    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
+  >(null!);
+  const genderRef = useRef<
+    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
+  >(null!);
+  const submitRef = useRef<
+    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
+  >(null!);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
@@ -110,7 +120,6 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
 
     const validateForm = () => {
       // Custom validation logic if needed
-      console.log('Form validation check');
     };
 
     // Debounced validation

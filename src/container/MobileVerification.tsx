@@ -1,11 +1,10 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, lazy, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import Button from '../components/Button';
 import PasswordInput from '../components/PasswordInput';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import { validatePassword } from '../utils/passwordFieldValidation';
 import './MobileVerification.css';
-import ProfileForm from '../components/ProfileForm';
 import Input from '../components/Input';
 import OTPInput from '../components/OTPInput';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
@@ -19,6 +18,17 @@ import {
   resetOTP,
 } from '../reducer/slices/MobileVerificationSlice';
 import { useDebounce } from '../hooks/useDebounce';
+
+// Lazy load ProfileForm component
+const ProfileForm = lazy(() => import('../components/ProfileForm'));
+
+// Loading fallback component for ProfileForm
+const ProfileFormLoader = () => (
+  <div className="flex items-center justify-center p-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+    <span className="ml-3 text-gray-600">Loading profile form...</span>
+  </div>
+);
 
 interface MobileVerificationProps {
   className?: string;
@@ -70,6 +80,8 @@ function MobileVerification({ className }: MobileVerificationProps) {
   // Watch mobile input and debounce for API calls
   const currentMobile = watchMobile('mobile') || '';
   const debouncedMobile = useDebounce(currentMobile, 800);
+
+  // ...existing useEffect hooks...
 
   // Auto-focus input on mount with cleanup
   useEffect(() => {
@@ -170,6 +182,8 @@ function MobileVerification({ className }: MobileVerificationProps) {
       }
     };
   }, [otp, mobile, step, dispatch]);
+
+  // ...rest of the existing functions remain the same...
 
   // Calculate progress percentage based on current step and verification status
   const getProgressPercentage = () => {
@@ -580,14 +594,16 @@ function MobileVerification({ className }: MobileVerificationProps) {
           </div>
         )}
 
-        {/* STEP 2: Profile Form */}
+        {/* STEP 2: Profile Form with Lazy Loading */}
         {currentStep === 2 && (
           <div>
             {!profileSubmitted ? (
-              <ProfileForm
-                className="mb-10"
-                onSubmit={() => setProfileSubmitted(true)}
-              />
+              <Suspense fallback={<ProfileFormLoader />}>
+                <ProfileForm
+                  className="mb-10"
+                  onSubmit={() => setProfileSubmitted(true)}
+                />
+              </Suspense>
             ) : (
               <div className="navigation-buttons mt-4 flex flex-col sm:flex-row gap-2 justify-between">
                 <Button

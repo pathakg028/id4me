@@ -41,8 +41,6 @@ export const checkMobileExists = createAsyncThunk(
   'mobileVerification/checkMobileExists',
   async (mobile: string, { rejectWithValue }) => {
     try {
-      console.log('🔍 Checking mobile:', mobile);
-
       const response = await axios.get(
         `http://localhost:3000/users?mobile=${mobile}`,
         {
@@ -52,9 +50,6 @@ export const checkMobileExists = createAsyncThunk(
           },
         }
       );
-
-      console.log('📱 API Response:', response.data);
-
       if (response.data && response.data.length > 0) {
         // Mobile number exists - return user data
         return {
@@ -69,8 +64,6 @@ export const checkMobileExists = createAsyncThunk(
         };
       }
     } catch (error: any) {
-      console.error('❌ API Error:', error);
-
       let message = 'Failed to verify mobile number';
 
       if (error.code === 'ECONNREFUSED') {
@@ -109,7 +102,6 @@ export const sendOTP = createAsyncThunk(
         }
       );
     } catch (error: any) {
-      console.error('❌ OTP Send Error:', error);
       return rejectWithValue('Failed to send OTP. Please try again.');
     }
   }
@@ -143,8 +135,6 @@ export const verifyOTP = createAsyncThunk(
         }, 1500);
       });
     } catch (error: any) {
-      console.error('❌ OTP Verification Error:', error);
-
       let message = 'Failed to verify OTP';
       if (error.message) {
         message = error.message;
