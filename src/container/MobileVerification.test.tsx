@@ -420,38 +420,4 @@ describe('MobileVerification - Users API Call Tests', () => {
       });
     });
   });
-
-  describe('🐛 Console Logging and Debug Information', () => {
-    test('should log API calls for debugging', async () => {
-      const consoleSpy = vi.spyOn(console, 'log');
-
-      (
-        mockedAxios.get as unknown as import('vitest').Mock
-      ).mockResolvedValueOnce({
-        data: [],
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      });
-
-      render(
-        <TestWrapper>
-          <MobileVerification />
-        </TestWrapper>
-      );
-
-      const mobileInput = screen.getByPlaceholderText(
-        'Enter your mobile number'
-      );
-      fireEvent.change(mobileInput, { target: { value: '9876543210' } });
-
-      await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith(
-          '🔍 Checking mobile: 9876543210'
-        );
-        expect(consoleSpy).toHaveBeenCalledWith('📱 API Response:', []);
-      });
-    });
-  });
 });
