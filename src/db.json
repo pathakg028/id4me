@@ -1,9 +1,16 @@
 {
-    "users": [
-        {
-            "id": 1,
-            "mobile": "",
-            "verified": false
-        }
-    ]
+  "users": [
+    {
+      "id": "1",
+      "mobile": "9876543210",
+      "name": "John Doe",
+      "email": "john@example.com"
+    },
+    {
+      "id": "2", 
+      "mobile": "8765432109",
+      "name": "Jane Smith",
+      "email": "jane@example.com"
+    }
+  ]
 }

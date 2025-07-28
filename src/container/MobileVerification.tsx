@@ -4,11 +4,20 @@ import Button from '../components/Button';
 import PasswordInput from '../components/PasswordInput';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import { validatePassword } from '../utils/passwordFieldValidation';
-import './MobileVerification.css';
+import './MobileVerification.css'; // Make sure this import exists
 import ProfileForm from '../components/ProfileForm';
 import Input from '../components/Input';
 import OTPInput from '../components/OTPInput';
-import { useMobileValidation } from '../hooks/useMobileValidation';
+import { useAppDispatch, useAppSelector } from '../app/hooks';
+import {
+  checkMobileExists,
+  sendOTP,
+  verifyOTP,
+  setMobile,
+  resetVerification,
+  clearError,
+  resetOTP,
+} from '../reducer/slices/MobileVerificationSlice';
 import { useDebounce } from '../hooks/useDebounce';
 
 interface MobileVerificationProps {
@@ -18,17 +27,24 @@ interface MobileVerificationProps {
 type MobileFormValues = { mobile: string };
 
 function MobileVerification({ className }: MobileVerificationProps) {
-  // Form states
+  // Redux state
+  const dispatch = useAppDispatch();
+  const {
+    mobile,
+    verified,
+    loading,
+    error,
+    otpSent,
+    otpLoading,
+    otpError,
+    user,
+    step,
+  } = useAppSelector((state) => state.mobileVerification);
+
+  // Local component state
   const [currentStep, setCurrentStep] = useState(1);
   const [profileSubmitted, setProfileSubmitted] = useState(false);
-
-  // Mobile & OTP states
-  const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [mobileVerified, setMobileVerified] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [otpError, setOtpError] = useState('');
   const [countdown, setCountdown] = useState(0);
 
   // Password states
@@ -40,7 +56,7 @@ function MobileVerification({ className }: MobileVerificationProps) {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Mobile form with validation
+  // Mobile form
   const {
     register: registerMobile,
     handleSubmit: handleSubmitMobile,
@@ -51,27 +67,24 @@ function MobileVerification({ className }: MobileVerificationProps) {
     defaultValues: { mobile: localStorage.getItem('mobile') || '' },
   });
 
-  // Watch mobile input for real-time validation
+  // Watch mobile input and debounce for API calls
   const currentMobile = watchMobile('mobile') || '';
-
-  // Debounce mobile input for API calls
-  const debouncedMobile = useDebounce(currentMobile, 500);
-
-  // Mobile validation hook
-  const {
-    isValid: isMobileValid,
-    error: mobileValidationError,
-    isValidating: isMobileValidating,
-  } = useMobileValidation(currentMobile, {
-    debounceDelay: 500,
-    onValidationChange: (isValid, error) => {
-      console.log('Mobile validation:', { isValid, error });
-    },
-  });
+  const debouncedMobile = useDebounce(currentMobile, 800);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Auto-check mobile existence when user stops typing
+  useEffect(() => {
+    if (
+      debouncedMobile &&
+      debouncedMobile.length === 10 &&
+      /^\d{10}$/.test(debouncedMobile)
+    ) {
+      dispatch(checkMobileExists(debouncedMobile));
+    }
+  }, [debouncedMobile, dispatch]);
 
   // Countdown timer for resend OTP
   useEffect(() => {
@@ -83,103 +96,122 @@ function MobileVerification({ className }: MobileVerificationProps) {
 
   // Auto-save valid mobile to localStorage
   useEffect(() => {
-    if (isMobileValid && debouncedMobile) {
-      localStorage.setItem('mobile', debouncedMobile);
+    if (mobile && mobile.length === 10) {
+      localStorage.setItem('mobile', mobile);
     }
-  }, [isMobileValid, debouncedMobile]);
+  }, [mobile]);
 
-  // Fake API: Send OTP with debounced validation
-  const sendOtp = async (mobileNumber: string) => {
-    if (!mobileNumber || mobileNumber.length !== 10) {
-      setOtpError('Please enter a valid 10-digit mobile number');
-      return;
-    }
-
-    if (!isMobileValid) {
-      setOtpError(
-        mobileValidationError || 'Please enter a valid mobile number'
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    setOtpError('');
-
-    // Simulate API call with longer delay for realism
-    setTimeout(() => {
-      console.log(`🔐 OTP sent to ${mobileNumber}: 123456`);
-      setOtpSent(true);
-      setIsLoading(false);
-      setCountdown(30);
-    }, 2000);
-  };
-
-  // Fake API: Verify OTP
-  const verifyOtp = (otpValue: string) => {
-    if (otpValue.length !== 6) {
-      setOtpError('Please enter a valid 6-digit OTP');
-      return;
-    }
-
-    setIsLoading(true);
-    setOtpError('');
-
-    // Simulate API call
-    setTimeout(() => {
-      if (otpValue === '123456') {
-        setMobileVerified(true);
-        setOtpError('');
-        console.log('✅ Mobile verified successfully!');
+  // Calculate progress percentage based on current step and verification status
+  const getProgressPercentage = () => {
+    if (currentStep === 1) {
+      if (step === 'verified' && verified) {
+        return 33.33; // Completed step 1
+      } else if (step === 'otp') {
+        return 20; // Partially completed step 1
       } else {
-        setOtpError('Invalid OTP. Please try again.');
+        return 10; // Just started step 1
       }
-      setIsLoading(false);
-    }, 1500);
+    } else if (currentStep === 2) {
+      if (profileSubmitted) {
+        return 66.66; // Completed step 2
+      } else {
+        return 50; // In step 2
+      }
+    } else if (currentStep === 3) {
+      if (showWelcome) {
+        return 100; // Completed all steps
+      } else {
+        return 80; // In step 3
+      }
+    }
+    return 0;
   };
 
-  // Step 1: Mobile submission with validation
-  const onMobileSubmit = (data: MobileFormValues) => {
-    if (!isMobileValid) {
-      setOtpError(
-        mobileValidationError || 'Please enter a valid mobile number'
-      );
+  // Get step status for each step
+  const getStepStatus = (stepNumber: number) => {
+    if (stepNumber < currentStep) return 'completed';
+    if (stepNumber === currentStep) {
+      if (stepNumber === 1 && verified) return 'completed';
+      if (stepNumber === 2 && profileSubmitted) return 'completed';
+      if (stepNumber === 3 && showWelcome) return 'completed';
+      return 'active';
+    }
+    return 'inactive';
+  };
+
+  // ... (keep all your existing functions like onMobileSubmit, handleOtpChange, etc.)
+  // Handle mobile form submission
+  const onMobileSubmit = async (data: MobileFormValues) => {
+    if (!data.mobile || data.mobile.length !== 10) {
       return;
     }
 
-    setPhone(data.mobile);
-    sendOtp(data.mobile);
+    dispatch(setMobile(data.mobile));
+
+    // Check if mobile exists first
+    const checkResult = await dispatch(checkMobileExists(data.mobile));
+
+    if (checkMobileExists.fulfilled.match(checkResult)) {
+      if (!checkResult.payload.exists) {
+        // Mobile doesn't exist, proceed with OTP
+        const otpResult = await dispatch(sendOTP(data.mobile));
+
+        if (sendOTP.fulfilled.match(otpResult)) {
+          setCountdown(30); // Start countdown for resend
+        }
+      }
+      // If mobile exists, error will be shown automatically via Redux state
+    }
   };
 
   // Handle OTP changes
   const handleOtpChange = (value: string) => {
     setOtp(value);
-    setOtpError('');
+    dispatch(clearError()); // Clear OTP errors when user types
   };
 
   // Handle OTP completion (auto-verify)
-  const handleOtpComplete = (value: string) => {
+  const handleOtpComplete = async (value: string) => {
     setOtp(value);
-    verifyOtp(value);
+    if (value.length === 6) {
+      await dispatch(verifyOTP({ mobile, otp: value }));
+    }
+  };
+
+  // Manual OTP verification
+  const handleVerifyOtp = async () => {
+    if (otp.length === 6) {
+      await dispatch(verifyOTP({ mobile, otp }));
+    }
   };
 
   // Resend OTP
-  const handleResendOtp = () => {
+  const handleResendOtp = async () => {
     setOtp('');
-    setOtpError('');
-    sendOtp(phone);
+    dispatch(clearError());
+    const result = await dispatch(sendOTP(mobile));
+
+    if (sendOTP.fulfilled.match(result)) {
+      setCountdown(30);
+    }
   };
 
   // Change mobile number
   const handleChangeMobile = () => {
-    setOtpSent(false);
+    dispatch(resetOTP());
     setOtp('');
-    setOtpError('');
-    setMobileVerified(false);
-    setPhone('');
     setCountdown(0);
   };
 
-  // Step 3: Password submission
+  // Reset entire verification process
+  const handleResetVerification = () => {
+    dispatch(resetVerification());
+    setOtp('');
+    setCountdown(0);
+    setCurrentStep(1);
+  };
+
+  // Password submission logic
   const onPasswordSubmit = () => {
     const pwError = validatePassword(password);
     const cpwError = !confirmPassword
@@ -205,6 +237,18 @@ function MobileVerification({ className }: MobileVerificationProps) {
     }
   };
 
+  // Get mobile validation status
+  const getMobileValidationStatus = () => {
+    if (!currentMobile) return null;
+    if (currentMobile.length < 10) return 'incomplete';
+    if (!/^\d{10}$/.test(currentMobile)) return 'invalid';
+    if (loading) return 'checking';
+    if (error) return 'error';
+    return 'valid';
+  };
+
+  const validationStatus = getMobileValidationStatus();
+
   return (
     <div
       className={`w-full max-w-md md:max-w-lg lg:max-w-xl mx-auto p-4 md:p-8 border rounded-md shadow-md bg-white min-h-screen flex flex-col justify-center ${className}`}
@@ -214,20 +258,80 @@ function MobileVerification({ className }: MobileVerificationProps) {
         Onboarding App
       </h1>
 
-      {/* Progress Bar */}
-      <div className="progress-container mb-6">
-        <div
-          className="progress-bar"
-          style={{ width: `${(currentStep / 3) * 100}%` }}
-        ></div>
+      {/* Enhanced Progress Bar with Step Indicators */}
+      <div className="mb-6">
+        {/* Step Indicators */}
+        <div className="step-indicators mb-4">
+          <div
+            className={`step-indicator ${getStepStatus(1) === 'completed' ? 'completed' : ''}`}
+          >
+            <div
+              className={`step-circle ${getStepStatus(1) === 'active' ? 'active' : ''} ${getStepStatus(1) === 'completed' ? 'completed' : ''}`}
+            >
+              {getStepStatus(1) === 'completed' ? '✓' : '1'}
+            </div>
+            <div
+              className={`step-label ${getStepStatus(1) === 'active' ? 'active' : ''} ${getStepStatus(1) === 'completed' ? 'completed' : ''}`}
+            >
+              Mobile
+            </div>
+          </div>
+
+          <div
+            className={`step-indicator ${getStepStatus(2) === 'completed' ? 'completed' : ''}`}
+          >
+            <div
+              className={`step-circle ${getStepStatus(2) === 'active' ? 'active' : ''} ${getStepStatus(2) === 'completed' ? 'completed' : ''}`}
+            >
+              {getStepStatus(2) === 'completed' ? '✓' : '2'}
+            </div>
+            <div
+              className={`step-label ${getStepStatus(2) === 'active' ? 'active' : ''} ${getStepStatus(2) === 'completed' ? 'completed' : ''}`}
+            >
+              Profile
+            </div>
+          </div>
+
+          <div
+            className={`step-indicator ${getStepStatus(3) === 'completed' ? 'completed' : ''}`}
+          >
+            <div
+              className={`step-circle ${getStepStatus(3) === 'active' ? 'active' : ''} ${getStepStatus(3) === 'completed' ? 'completed' : ''}`}
+            >
+              {getStepStatus(3) === 'completed' ? '✓' : '3'}
+            </div>
+            <div
+              className={`step-label ${getStepStatus(3) === 'active' ? 'active' : ''} ${getStepStatus(3) === 'completed' ? 'completed' : ''}`}
+            >
+              Password
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="progress-container">
+          <div
+            className="progress-bar"
+            style={{ width: `${getProgressPercentage()}%` }}
+          ></div>
+        </div>
+
+        {/* Progress Text */}
+        <div className="text-center mt-2">
+          <span className="text-sm text-gray-600">
+            Step {currentStep} of 3 • {Math.round(getProgressPercentage())}%
+            Complete
+          </span>
+        </div>
       </div>
 
       <div className="step-container">
-        {/* STEP 1: Mobile Verification with Debounced Validation */}
+        {/* ... (keep all your existing step content) */}
+        {/* STEP 1: Mobile Verification with API Integration */}
         {currentStep === 1 && (
           <div>
-            {!otpSent ? (
-              /* Mobile Number Input with Real-time Validation */
+            {step === 'input' && (
+              /* Mobile Number Input with Real-time API Validation */
               <form onSubmit={handleSubmitMobile(onMobileSubmit)}>
                 <label className="block mb-2 font-medium text-left">
                   Mobile Number
@@ -246,7 +350,7 @@ function MobileVerification({ className }: MobileVerificationProps) {
                             .replace(/[^0-9]/g, '')
                             .slice(0, 10);
                           setMobileValue('mobile', value);
-                          setPhone(value);
+                          dispatch(setMobile(value));
                         },
                       })}
                       ref={(el) => {
@@ -257,32 +361,47 @@ function MobileVerification({ className }: MobileVerificationProps) {
                       className={`
                         w-full border border-gray-300 rounded-md p-2 mb-2 
                         focus:outline-none focus:ring-2 focus:ring-green-400
-                        ${mobileValidationError ? 'border-red-500' : ''}
-                        ${isMobileValid && currentMobile.length === 10 ? 'border-green-500' : ''}
+                        ${validationStatus === 'error' ? 'border-red-500' : ''}
+                        ${validationStatus === 'valid' ? 'border-green-500' : ''}
                       `}
                     />
 
-                    {/* Loading indicator for validation */}
-                    {isMobileValidating && currentMobile.length >= 3 && (
+                    {/* API Loading indicator */}
+                    {validationStatus === 'checking' && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                       </div>
                     )}
                   </div>
                   {/* Real-time validation feedback */}
-                  {currentMobile.length > 0 && !isMobileValidating && (
+                  {currentMobile.length > 0 && (
                     <div className="mt-1">
-                      {mobileValidationError ? (
-                        <p className="text-red-500 text-sm flex items-center">
-                          <span className="mr-1">❌</span>
-                          {mobileValidationError}
+                      {validationStatus === 'checking' && (
+                        <p className="text-blue-500 text-sm">
+                          🔍 Checking mobile number...
                         </p>
-                      ) : isMobileValid ? (
-                        <p className="text-green-500 text-sm flex items-center">
-                          <span className="mr-1">✅</span>
-                          Valid mobile number
+                      )}
+                      {validationStatus === 'error' && error && (
+                        <p className="text-red-500 text-sm">❌ {error}</p>
+                      )}
+                      {validationStatus === 'valid' &&
+                        currentMobile.length === 10 &&
+                        !error && (
+                          <p className="text-green-500 text-sm">
+                            ✅ Mobile number is available
+                          </p>
+                        )}
+                      {validationStatus === 'invalid' && (
+                        <p className="text-red-500 text-sm">
+                          ❌ Please enter a valid 10-digit mobile number
                         </p>
-                      ) : null}
+                      )}
+                      {validationStatus === 'incomplete' &&
+                        currentMobile.length > 0 && (
+                          <p className="text-gray-500 text-sm">
+                            📱 Enter {10 - currentMobile.length} more digits
+                          </p>
+                        )}
                     </div>
                   )}
                 </label>
@@ -296,60 +415,66 @@ function MobileVerification({ className }: MobileVerificationProps) {
                 <Button
                   type="submit"
                   disabled={
-                    isLoading ||
-                    !isMobileValid ||
-                    isMobileValidating ||
-                    currentMobile.length !== 10
+                    otpLoading ||
+                    loading ||
+                    validationStatus !== 'valid' ||
+                    currentMobile.length !== 10 ||
+                    !!error
                   }
                   className="w-full"
                 >
-                  {isLoading ? 'Sending OTP...' : 'Send OTP'}
+                  {otpLoading ? 'Sending OTP...' : 'Send OTP'}
                 </Button>
 
-                {otpError && <p className="text-red-500 mt-4">{otpError}</p>}
-
-                {/* Helpful hints */}
+                {/* API Connection Status */}
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-blue-800 text-sm">
-                    💡 <strong>Tips:</strong>
+                    🔗 <strong>API Status:</strong> Checking mobile numbers via
+                    localhost:3000
                   </p>
-                  <ul className="text-blue-700 text-sm mt-1 list-disc list-inside">
-                    <li>Enter a 10-digit Indian mobile number</li>
-                    <li>Number should start with 6, 7, 8, or 9</li>
-                    <li>We'll check if it's already registered</li>
-                  </ul>
+                  <p className="text-blue-700 text-xs mt-1">
+                    Make sure your JSON server is running on port 3000
+                  </p>
                 </div>
               </form>
-            ) : (
-              /* OTP Verification Section */
+            )}
+
+            {step === 'otp' && (
+              /* OTP Verification */
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">
                   Verify Your Mobile
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  We've sent a 6-digit code to +91 {phone.slice(0, 2)}****
-                  {phone.slice(-2)}
+                  We've sent a 6-digit code to +91 {mobile.slice(0, 2)}****
+                  {mobile.slice(-2)}
                 </p>
+
+                {otpSent && (
+                  <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    ✅ OTP sent successfully! Use: <strong>123456</strong>
+                  </div>
+                )}
 
                 <OTPInput
                   length={6}
                   value={otp}
                   onChange={handleOtpChange}
                   onComplete={handleOtpComplete}
-                  disabled={isLoading}
-                  error={otpError}
+                  disabled={otpLoading}
+                  error={otpError || ''}
                   autoFocus
                   className="mb-4"
                 />
 
-                {!mobileVerified ? (
+                {!verified ? (
                   <>
                     <Button
-                      onClick={() => verifyOtp(otp)}
-                      disabled={otp.length !== 6 || isLoading}
+                      onClick={handleVerifyOtp}
+                      disabled={otp.length !== 6 || otpLoading}
                       className="w-full mb-4"
                     >
-                      {isLoading ? 'Verifying...' : 'Verify OTP'}
+                      {otpLoading ? 'Verifying...' : 'Verify OTP'}
                     </Button>
 
                     <div className="text-center mb-4">
@@ -363,7 +488,7 @@ function MobileVerification({ className }: MobileVerificationProps) {
                       ) : (
                         <button
                           onClick={handleResendOtp}
-                          disabled={isLoading}
+                          disabled={otpLoading}
                           className="text-blue-600 hover:text-blue-500 font-medium text-sm"
                         >
                           Resend OTP
@@ -379,16 +504,18 @@ function MobileVerification({ className }: MobileVerificationProps) {
                       Change Mobile Number
                     </Button>
                   </>
-                ) : (
-                  <div>
-                    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                      ✅ Mobile verified successfully!
-                    </div>
-                    <Button onClick={handleNext} className="w-full">
-                      Continue to Profile
-                    </Button>
-                  </div>
-                )}
+                ) : null}
+              </div>
+            )}
+
+            {step === 'verified' && verified && (
+              <div className="text-center">
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                  ✅ Mobile number verified successfully!
+                </div>
+                <Button onClick={handleNext} className="w-full">
+                  Continue to Profile
+                </Button>
               </div>
             )}
           </div>
@@ -452,11 +579,14 @@ function MobileVerification({ className }: MobileVerificationProps) {
             ) : (
               <div className="text-center">
                 <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                  ✅ Password set successfully!
+                  ✅ Account created successfully!
                 </div>
                 <h2 className="text-2xl font-bold text-green-600 mb-4">
                   Welcome Onboard! 🎉
                 </h2>
+                <p className="text-gray-600 mb-4">
+                  Mobile: {mobile} | Verified: ✅
+                </p>
                 <Button
                   onClick={() => console.log('Onboarding completed!')}
                   className="w-full"
