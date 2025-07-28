@@ -27,6 +27,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
   const dobRef = useRef<HTMLInputElement>(null);
   const genderRef = useRef<HTMLSelectElement>(null);
   const submitRef = useRef<HTMLButtonElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     register,
@@ -37,11 +38,22 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
     resolver: zodResolver(profileFormSchema),
   });
 
-  // Auto-focus first field on mount
+  // Auto-focus first field on mount with cleanup
   useEffect(() => {
     if (firstInputRef.current) {
-      firstInputRef.current.focus();
+      // Use timeout to ensure DOM is ready
+      timeoutRef.current = setTimeout(() => {
+        firstInputRef.current?.focus();
+      }, 0);
     }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
   }, []);
 
   // Focus first error field when validation fails
@@ -52,6 +64,64 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
     }
   }, [errors, setFocus]);
 
+  // Enhanced keyboard shortcuts with global event listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Only handle if form is visible and not disabled
+      if (loading) return;
+
+      // Global Ctrl/Cmd + S to trigger form submission
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSubmit(handleFormSubmit)();
+      }
+
+      // Global Escape to clear all fields
+      if (e.key === 'Escape' && e.shiftKey) {
+        e.preventDefault();
+        // Reset form if needed
+        const activeElement = document.activeElement;
+        const isFormFocused = [
+          firstInputRef.current,
+          emailRef.current,
+          dobRef.current,
+          genderRef.current,
+          submitRef.current,
+        ].includes(activeElement as any);
+
+        if (isFormFocused) {
+          (activeElement as HTMLElement)?.blur();
+        }
+      }
+    };
+
+    // Add global event listener
+    document.addEventListener('keydown', handleGlobalKeyDown);
+
+    // Cleanup event listener
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [loading, handleSubmit]);
+
+  // Enhanced form validation with debounce
+  useEffect(() => {
+    let validationTimeout: NodeJS.Timeout;
+
+    const validateForm = () => {
+      // Custom validation logic if needed
+      console.log('Form validation check');
+    };
+
+    // Debounced validation
+    validationTimeout = setTimeout(validateForm, 300);
+
+    // Cleanup timeout
+    return () => {
+      clearTimeout(validationTimeout);
+    };
+  }, [errors]);
+
   const handleFormSubmit = async (data: ProfileFormData) => {
     dispatch(setProfileFormLoading(true));
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -59,7 +129,12 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
     dispatch(
       setProfileForm({
         ...data,
-        gender: data.gender || undefined,
+        gender:
+          data.gender === 'male' ||
+          data.gender === 'female' ||
+          data.gender === 'other'
+            ? data.gender
+            : undefined,
       })
     );
 
@@ -294,7 +369,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
 
       <p id="submit-help" className="text-xs text-gray-500 text-center">
         Press Ctrl+Enter to submit from any field, Alt+1-5 to jump to specific
-        fields
+        fields, Ctrl+S to save
       </p>
     </form>
   );

@@ -54,6 +54,7 @@ function MobileVerification({ className }: MobileVerificationProps) {
   const [showWelcome, setShowWelcome] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mobile form
   const {
@@ -70,8 +71,21 @@ function MobileVerification({ className }: MobileVerificationProps) {
   const currentMobile = watchMobile('mobile') || '';
   const debouncedMobile = useDebounce(currentMobile, 800);
 
+  // Auto-focus input on mount with cleanup
   useEffect(() => {
-    inputRef.current?.focus();
+    if (inputRef.current) {
+      timeoutRef.current = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    }
+
+    // 🧹 Cleanup timeout
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
   }, []);
 
   // Auto-check mobile existence when user stops typing
@@ -83,14 +97,23 @@ function MobileVerification({ className }: MobileVerificationProps) {
     ) {
       dispatch(checkMobileExists(debouncedMobile));
     }
+    // No cleanup needed - dispatch doesn't create subscriptions
   }, [debouncedMobile, dispatch]);
 
-  // Countdown timer for resend OTP
+  // Countdown timer for resend OTP with cleanup
   useEffect(() => {
+    let timer: NodeJS.Timeout;
+
     if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     }
+
+    // 🧹 Cleanup timer
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, [countdown]);
 
   // Auto-save valid mobile to localStorage
@@ -98,7 +121,55 @@ function MobileVerification({ className }: MobileVerificationProps) {
     if (mobile && mobile.length === 10) {
       localStorage.setItem('mobile', mobile);
     }
+    // No cleanup needed - localStorage is synchronous
   }, [mobile]);
+
+  // Enhanced keyboard shortcuts with cleanup
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + R to reset form
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        if (currentStep === 1) {
+          dispatch(resetVerification());
+          setOtp('');
+          setCountdown(0);
+        }
+      }
+
+      // Escape to clear errors
+      if (e.key === 'Escape') {
+        dispatch(clearError());
+        setPasswordError('');
+        setConfirmPasswordError('');
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+
+    // 🧹 Cleanup event listener
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [currentStep, dispatch]);
+
+  // Auto-verify OTP when complete with debounce
+  useEffect(() => {
+    let verifyTimeout: NodeJS.Timeout;
+
+    if (otp.length === 6 && mobile && step === 'otp') {
+      verifyTimeout = setTimeout(() => {
+        dispatch(verifyOTP({ mobile, otp }));
+      }, 500); // Debounce to prevent rapid API calls
+    }
+
+    // 🧹 Cleanup timeout
+    return () => {
+      if (verifyTimeout) {
+        clearTimeout(verifyTimeout);
+      }
+    };
+  }, [otp, mobile, step, dispatch]);
 
   // Calculate progress percentage based on current step and verification status
   const getProgressPercentage = () => {

@@ -27,19 +27,57 @@ const OTPInput: React.FC<OTPInputProps> = ({
     value.split('').concat(Array(length - value.length).fill(''))
   );
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Auto-focus with cleanup
   useEffect(() => {
-    if (autoFocus && inputRefs.current[0]) {
-      inputRefs.current[0].focus();
+    if (autoFocus && inputRefs.current[0] && !disabled) {
+      // Use timeout to ensure DOM is ready
+      timeoutRef.current = setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 0);
     }
-  }, [autoFocus]);
 
+    // Cleanup timeout on unmount or dependency change
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [autoFocus, disabled]);
+
+  // Sync external value changes
   useEffect(() => {
     const newOtp = value
       .split('')
       .concat(Array(length - value.length).fill(''));
     setOtp(newOtp.slice(0, length));
   }, [value, length]);
+
+  // Enhanced keyboard event handler
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Handle Ctrl/Cmd + V for paste when component is focused
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        const activeElement = document.activeElement;
+        const isOTPInputFocused = inputRefs.current.some(
+          (ref) => ref === activeElement
+        );
+
+        if (isOTPInputFocused) {
+          // Let the paste handler on the input handle this
+          return;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
 
   const handleChange = (index: number, val: string) => {
     if (disabled) return;
@@ -92,6 +130,10 @@ const OTPInput: React.FC<OTPInputProps> = ({
     if (e.key === 'Backspace') {
       if (!otp[index] && index > 0) {
         // Move to previous input if current is empty
+        const newOtp = [...otp];
+        newOtp[index - 1] = '';
+        setOtp(newOtp);
+        onChange(newOtp.join(''));
         inputRefs.current[index - 1]?.focus();
       } else {
         // Clear current input
@@ -104,6 +146,12 @@ const OTPInput: React.FC<OTPInputProps> = ({
       inputRefs.current[index - 1]?.focus();
     } else if (e.key === 'ArrowRight' && index < length - 1) {
       inputRefs.current[index + 1]?.focus();
+    } else if (e.key === 'Delete') {
+      // Handle Delete key
+      const newOtp = [...otp];
+      newOtp[index] = '';
+      setOtp(newOtp);
+      onChange(newOtp.join(''));
     }
   };
 
@@ -141,7 +189,11 @@ const OTPInput: React.FC<OTPInputProps> = ({
         <label className="block text-gray-700 font-bold mb-2">{label}</label>
       )}
 
-      <div className="flex gap-2 justify-center">
+      <div
+        className="flex gap-2 justify-center"
+        role="group"
+        aria-label={`${label || 'OTP'} input with ${length} digits`}
+      >
         {Array.from({ length }, (_, index) => (
           <input
             key={index}
@@ -174,13 +226,20 @@ const OTPInput: React.FC<OTPInputProps> = ({
               }
               ${otp[index] ? 'border-green-500' : ''}
             `}
-            aria-label={`OTP digit ${index + 1}`}
+            aria-label={`${label || 'OTP'} digit ${index + 1} of ${length}`}
+            aria-invalid={!!error}
+            aria-describedby={error ? 'otp-error' : undefined}
           />
         ))}
       </div>
 
       {error && (
-        <p className="text-red-500 text-sm mt-2" role="alert">
+        <p
+          id="otp-error"
+          className="text-red-500 text-sm mt-2"
+          role="alert"
+          aria-live="polite"
+        >
           {error}
         </p>
       )}

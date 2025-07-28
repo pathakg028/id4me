@@ -163,7 +163,7 @@ const mobileVerificationSlice = createSlice({
       state.mobile = action.payload;
       state.error = null; // Clear errors when mobile changes
     },
-    resetVerification: (state) => {
+    resetVerification: () => {
       return initialState;
     },
     clearError: (state) => {
