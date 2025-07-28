@@ -5,6 +5,9 @@ interface PasswordInputProps {
   value: string;
   error?: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  className?: string;
+  disabled?: boolean;
+  placeholder?: string;
 }
 
 const PasswordInput: React.FC<PasswordInputProps> = ({
@@ -12,6 +15,9 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
   value,
   error,
   onChange,
+  className = '',
+  disabled = false,
+  placeholder,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -19,26 +25,57 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
     setShowPassword((prev) => !prev);
   };
 
+  const defaultPlaceholder = placeholder || `Enter your ${label.toLowerCase()}`;
+
   return (
-    <div className="mb-4">
+    <div className={`mb-4 ${className}`}>
       <label className="block text-gray-700 font-bold mb-2">{label}</label>
       <div className="relative">
         <input
           type={showPassword ? 'text' : 'password'}
           value={value}
           onChange={onChange}
-          className="w-full border border-gray-300 rounded-md p-2"
-          placeholder={`Enter your ${label.toLowerCase()}`}
+          disabled={disabled}
+          className={`
+            w-full border rounded-md p-2 pr-12
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+            transition-colors duration-200
+            ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}
+            ${disabled ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'}
+          `}
+          placeholder={defaultPlaceholder}
+          aria-describedby={error ? `${label}-error` : undefined}
+          aria-invalid={!!error}
         />
         <button
           type="button"
           onClick={togglePasswordVisibility}
-          className="absolute right-2 top-2 text-gray-600"
+          disabled={disabled}
+          className={`
+            absolute right-2 top-1/2 transform -translate-y-1/2
+            px-2 py-1 text-sm font-medium rounded
+            transition-colors duration-200
+            ${
+              disabled
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+            }
+          `}
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          tabIndex={disabled ? -1 : 0}
         >
-          {showPassword ? 'Hide' : 'Show'}
+          {showPassword ? '👁️‍🗨️' : '👁️'}
         </button>
       </div>
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      {error && (
+        <p
+          className="text-red-500 text-sm mt-1"
+          id={`${label}-error`}
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 };

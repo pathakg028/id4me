@@ -1,4 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import {
+  createSlice,
+  createAsyncThunk,
+  type PayloadAction,
+} from '@reduxjs/toolkit';
 import axios from 'axios';
 
 interface User {
@@ -32,17 +36,17 @@ const initialState: MobileVerificationState = {
   step: 'input',
 };
 
-// Check if mobile number exists in database (renamed from verifyMobile)
+// Check if mobile number exists in database
 export const checkMobileExists = createAsyncThunk(
   'mobileVerification/checkMobileExists',
   async (mobile: string, { rejectWithValue }) => {
     try {
-      console.log(`🔍 Checking mobile: ${mobile}`);
+      console.log('🔍 Checking mobile:', mobile);
 
       const response = await axios.get(
         `http://localhost:3000/users?mobile=${mobile}`,
         {
-          timeout: 5000, // 5 second timeout
+          timeout: 5000,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -92,14 +96,10 @@ export const sendOTP = createAsyncThunk(
   'mobileVerification/sendOTP',
   async (mobile: string, { rejectWithValue }) => {
     try {
-      console.log(`📤 Sending OTP to: ${mobile}`);
-
-      // Simulate API call for sending OTP
       // In a real app, this would call your OTP service
       return new Promise<{ mobile: string; otpId: string; message: string }>(
         (resolve) => {
           setTimeout(() => {
-            console.log('📨 OTP sent successfully (simulated)');
             resolve({
               mobile,
               otpId: 'simulated-otp-id',
@@ -123,8 +123,6 @@ export const verifyOTP = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      console.log(`🔐 Verifying OTP: ${otp} for mobile: ${mobile}`);
-
       // Simulate API call for OTP verification
       return new Promise<{
         mobile: string;
@@ -134,14 +132,12 @@ export const verifyOTP = createAsyncThunk(
         setTimeout(() => {
           // For demo purposes - accept 123456 as valid OTP
           if (otp === '123456') {
-            console.log('✅ OTP verified successfully');
             resolve({
               mobile,
               verified: true,
               message: 'Mobile number verified successfully',
             });
           } else {
-            console.log('❌ Invalid OTP');
             reject(new Error('Invalid OTP. Please try again.'));
           }
         }, 1500);
@@ -154,29 +150,6 @@ export const verifyOTP = createAsyncThunk(
         message = error.message;
       }
 
-      return rejectWithValue(message);
-    }
-  }
-);
-
-// Keep the original verifyMobile for backward compatibility
-export const verifyMobile = createAsyncThunk(
-  'mobileVerification/verifyMobile',
-  async (mobile: string, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(
-        `http://localhost:3000/users?mobile=${mobile}`
-      );
-      if (response.data.length > 0) {
-        return response.data[0];
-      } else {
-        throw new Error('Mobile number not found');
-      }
-    } catch (error: unknown) {
-      let message = 'An error occurred';
-      if (error instanceof Error) {
-        message = error.message;
-      }
       return rejectWithValue(message);
     }
   }
@@ -204,10 +177,6 @@ const mobileVerificationSlice = createSlice({
       state.otpSent = false;
       state.otpError = null;
       state.step = 'input';
-    },
-    verifyMobileReducer: (state, action) => {
-      // Legacy verification logic - keep for backward compatibility
-      state.verified = true;
     },
   },
   extraReducers: (builder) => {
@@ -266,32 +235,11 @@ const mobileVerificationSlice = createSlice({
       .addCase(verifyOTP.rejected, (state, action) => {
         state.otpLoading = false;
         state.otpError = action.payload as string;
-      })
-
-      // Handle legacy verifyMobile (keep for backward compatibility)
-      .addCase(verifyMobile.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(verifyMobile.fulfilled, (state, action) => {
-        state.loading = false;
-        state.verified = true;
-        state.mobile = action.payload.mobile;
-      })
-      .addCase(verifyMobile.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
       });
   },
 });
 
-export const {
-  setMobile,
-  verifyMobileReducer,
-  resetVerification,
-  clearError,
-  setStep,
-  resetOTP,
-} = mobileVerificationSlice.actions;
+export const { setMobile, resetVerification, clearError, setStep, resetOTP } =
+  mobileVerificationSlice.actions;
 
 export default mobileVerificationSlice.reducer;

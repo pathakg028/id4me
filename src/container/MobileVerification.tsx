@@ -4,7 +4,7 @@ import Button from '../components/Button';
 import PasswordInput from '../components/PasswordInput';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import { validatePassword } from '../utils/passwordFieldValidation';
-import './MobileVerification.css'; // Make sure this import exists
+import './MobileVerification.css';
 import ProfileForm from '../components/ProfileForm';
 import Input from '../components/Input';
 import OTPInput from '../components/OTPInput';
@@ -37,7 +37,6 @@ function MobileVerification({ className }: MobileVerificationProps) {
     otpSent,
     otpLoading,
     otpError,
-    user,
     step,
   } = useAppSelector((state) => state.mobileVerification);
 
@@ -105,23 +104,23 @@ function MobileVerification({ className }: MobileVerificationProps) {
   const getProgressPercentage = () => {
     if (currentStep === 1) {
       if (step === 'verified' && verified) {
-        return 33.33; // Completed step 1
+        return 33.33;
       } else if (step === 'otp') {
-        return 20; // Partially completed step 1
+        return 20;
       } else {
-        return 10; // Just started step 1
+        return 10;
       }
     } else if (currentStep === 2) {
       if (profileSubmitted) {
-        return 66.66; // Completed step 2
+        return 66.66;
       } else {
-        return 50; // In step 2
+        return 50;
       }
     } else if (currentStep === 3) {
       if (showWelcome) {
-        return 100; // Completed all steps
+        return 100;
       } else {
-        return 80; // In step 3
+        return 80;
       }
     }
     return 0;
@@ -139,7 +138,6 @@ function MobileVerification({ className }: MobileVerificationProps) {
     return 'inactive';
   };
 
-  // ... (keep all your existing functions like onMobileSubmit, handleOtpChange, etc.)
   // Handle mobile form submission
   const onMobileSubmit = async (data: MobileFormValues) => {
     if (!data.mobile || data.mobile.length !== 10) {
@@ -157,17 +155,16 @@ function MobileVerification({ className }: MobileVerificationProps) {
         const otpResult = await dispatch(sendOTP(data.mobile));
 
         if (sendOTP.fulfilled.match(otpResult)) {
-          setCountdown(30); // Start countdown for resend
+          setCountdown(30);
         }
       }
-      // If mobile exists, error will be shown automatically via Redux state
     }
   };
 
   // Handle OTP changes
   const handleOtpChange = (value: string) => {
     setOtp(value);
-    dispatch(clearError()); // Clear OTP errors when user types
+    dispatch(clearError());
   };
 
   // Handle OTP completion (auto-verify)
@@ -201,14 +198,6 @@ function MobileVerification({ className }: MobileVerificationProps) {
     dispatch(resetOTP());
     setOtp('');
     setCountdown(0);
-  };
-
-  // Reset entire verification process
-  const handleResetVerification = () => {
-    dispatch(resetVerification());
-    setOtp('');
-    setCountdown(0);
-    setCurrentStep(1);
   };
 
   // Password submission logic
@@ -326,7 +315,6 @@ function MobileVerification({ className }: MobileVerificationProps) {
       </div>
 
       <div className="step-container">
-        {/* ... (keep all your existing step content) */}
         {/* STEP 1: Mobile Verification with API Integration */}
         {currentStep === 1 && (
           <div>
@@ -588,7 +576,7 @@ function MobileVerification({ className }: MobileVerificationProps) {
                   Mobile: {mobile} | Verified: ✅
                 </p>
                 <Button
-                  onClick={() => console.log('Onboarding completed!')}
+                  onClick={() => alert('Onboarding completed!')}
                   className="w-full"
                 >
                   Get Started

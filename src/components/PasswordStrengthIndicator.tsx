@@ -30,11 +30,9 @@ const requirements: PasswordRequirement[] = [
     label: 'One special character',
     test: (password) => /[^A-Za-z0-9]/.test(password),
   },
-];
+] as const;
 
-const getPasswordStrength = (
-  password: string
-): { strength: string; score: number; color: string } => {
+const getPasswordStrength = (password: string) => {
   if (!password) return { strength: '', score: 0, color: '' };
 
   const passedRequirements = requirements.filter((req) =>
@@ -46,20 +44,26 @@ const getPasswordStrength = (
       strength: 'Weak',
       score: passedRequirements,
       color: 'text-red-500',
-    };
+    } as const;
   } else if (passedRequirements < 5) {
     return {
       strength: 'Medium',
       score: passedRequirements,
       color: 'text-yellow-500',
-    };
+    } as const;
   } else {
     return {
       strength: 'Strong',
       score: passedRequirements,
       color: 'text-green-500',
-    };
+    } as const;
   }
+};
+
+const getStrengthColor = (score: number): string => {
+  if (score < 3) return 'bg-red-500';
+  if (score < 5) return 'bg-yellow-500';
+  return 'bg-green-500';
 };
 
 const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
@@ -77,18 +81,16 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
           Password strength:
         </span>
         <span className={`text-sm font-semibold ${color}`}>{strength}</span>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((level) => (
+        <div
+          className="flex gap-1"
+          role="progressbar"
+          aria-label={`Password strength: ${strength}`}
+        >
+          {Array.from({ length: 5 }, (_, index) => (
             <div
-              key={level}
+              key={index}
               className={`w-2 h-2 rounded-full ${
-                level <= score
-                  ? score < 3
-                    ? 'bg-red-500'
-                    : score < 5
-                      ? 'bg-yellow-500'
-                      : 'bg-green-500'
-                  : 'bg-gray-300'
+                index < score ? getStrengthColor(score) : 'bg-gray-300'
               }`}
             />
           ))}
@@ -109,6 +111,7 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
                   className={`text-xs ${
                     isValid ? 'text-green-500' : 'text-red-500'
                   }`}
+                  aria-hidden="true"
                 >
                   {isValid ? '✓' : '✗'}
                 </span>

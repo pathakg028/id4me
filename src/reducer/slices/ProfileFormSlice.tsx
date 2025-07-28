@@ -1,11 +1,11 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface ProfileFormState {
   fullName: string;
   email: string;
   dob: string;
   gender?: 'male' | 'female' | 'other';
-  loading: boolean; // Add loading state
+  loading: boolean;
 }
 
 const initialState: ProfileFormState = {
@@ -13,48 +13,27 @@ const initialState: ProfileFormState = {
   email: '',
   dob: '',
   gender: undefined,
-  loading: false, // Initialize loading
+  loading: false,
 };
 
 const profileFormSlice = createSlice({
   name: 'profileForm',
   initialState,
   reducers: {
-    setFullName(state, action: PayloadAction<string>) {
-      state.fullName = action.payload;
-    },
-    setEmail(state, action: PayloadAction<string>) {
-      state.email = action.payload;
-    },
-    setDob(state, action: PayloadAction<string>) {
-      state.dob = action.payload;
-    },
-    setGender(
-      state,
-      action: PayloadAction<'male' | 'female' | 'other' | undefined>
-    ) {
-      state.gender = action.payload;
-    },
-    setProfileForm(state, action: PayloadAction<ProfileFormState>) {
+    // Bulk setter - this is what ProfileForm actually uses
+    setProfileForm(state, action: PayloadAction<Partial<ProfileFormState>>) {
       return { ...state, ...action.payload };
-    },
-    resetProfileForm() {
-      return initialState;
     },
     setProfileFormLoading(state, action: PayloadAction<boolean>) {
       state.loading = action.payload;
     },
+    resetProfileForm() {
+      return initialState;
+    },
   },
 });
 
-export const {
-  setFullName,
-  setEmail,
-  setDob,
-  setGender,
-  setProfileForm,
-  resetProfileForm,
-  setProfileFormLoading,
-} = profileFormSlice.actions;
+export const { setProfileForm, setProfileFormLoading, resetProfileForm } =
+  profileFormSlice.actions;
 
 export default profileFormSlice.reducer;

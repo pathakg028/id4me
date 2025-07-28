@@ -7,9 +7,7 @@ interface OTPInputProps {
   onComplete?: (otp: string) => void;
   disabled?: boolean;
   autoFocus?: boolean;
-  placeholder?: string;
   className?: string;
-  inputClassName?: string;
   error?: string;
   label?: string;
 }
@@ -21,9 +19,7 @@ const OTPInput: React.FC<OTPInputProps> = ({
   onComplete,
   disabled = false,
   autoFocus = true,
-  placeholder = '',
   className = '',
-  inputClassName = '',
   error,
   label,
 }) => {
@@ -62,9 +58,7 @@ const OTPInput: React.FC<OTPInputProps> = ({
 
       // Focus on the last filled input or next empty input
       const nextIndex = Math.min(pastedData.length, length - 1);
-      if (inputRefs.current[nextIndex]) {
-        inputRefs.current[nextIndex]?.focus();
-      }
+      inputRefs.current[nextIndex]?.focus();
 
       if (pastedData.length === length && onComplete) {
         onComplete(pastedData);
@@ -163,7 +157,6 @@ const OTPInput: React.FC<OTPInputProps> = ({
             onFocus={() => handleFocus(index)}
             onPaste={handlePaste}
             disabled={disabled}
-            placeholder={placeholder}
             className={`
               w-12 h-12 text-center text-lg font-semibold
               border-2 rounded-lg
@@ -180,7 +173,6 @@ const OTPInput: React.FC<OTPInputProps> = ({
                   : 'bg-white hover:border-gray-400'
               }
               ${otp[index] ? 'border-green-500' : ''}
-              ${inputClassName}
             `}
             aria-label={`OTP digit ${index + 1}`}
           />
