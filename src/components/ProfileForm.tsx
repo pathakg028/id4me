@@ -21,22 +21,12 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
   const loading = useAppSelector((state) => state.profileForm.loading);
 
   // Refs for keyboard navigation
-  const firstInputRef = useRef<HTMLInputElement>(null);
-  const fullNameRef = useRef<
-    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
-  >(null!);
-  const emailRef = useRef<
-    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
-  >(null!);
-  const dobRef = useRef<
-    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
-  >(null!);
-  const genderRef = useRef<
-    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
-  >(null!);
-  const submitRef = useRef<
-    HTMLInputElement | HTMLSelectElement | HTMLButtonElement
-  >(null!);
+  const firstInputRef = useRef<HTMLInputElement | null>(null);
+  const fullNameRef = useRef<HTMLInputElement | HTMLSelectElement | HTMLButtonElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | HTMLSelectElement | HTMLButtonElement | null>(null);
+  const dobRef = useRef<HTMLInputElement | HTMLSelectElement | HTMLButtonElement | null>(null);
+  const genderRef = useRef<HTMLInputElement | HTMLSelectElement | HTMLButtonElement | null>(null);
+  const submitRef = useRef<HTMLButtonElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
@@ -97,10 +87,12 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
           dobRef.current,
           genderRef.current,
           submitRef.current,
-        ].includes(activeElement as any);
+        ].includes(
+          activeElement as HTMLInputElement | HTMLSelectElement | HTMLButtonElement | null
+        );
 
         if (isFormFocused) {
-          (activeElement as HTMLElement)?.blur();
+          (activeElement as HTMLInputElement | HTMLSelectElement | HTMLButtonElement | null)?.blur?.();
         }
       }
     };
@@ -116,14 +108,9 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
 
   // Enhanced form validation with debounce
   useEffect(() => {
-    let validationTimeout: NodeJS.Timeout;
-
-    const validateForm = () => {
+    const validationTimeout: NodeJS.Timeout = setTimeout(() => {
       // Custom validation logic if needed
-    };
-
-    // Debounced validation
-    validationTimeout = setTimeout(validateForm, 300);
+    }, 300);
 
     // Cleanup timeout
     return () => {
@@ -140,8 +127,8 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
         ...data,
         gender:
           data.gender === 'male' ||
-          data.gender === 'female' ||
-          data.gender === 'other'
+            data.gender === 'female' ||
+            data.gender === 'other'
             ? data.gender
             : undefined,
       })
@@ -154,12 +141,8 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
   // Enhanced keyboard navigation
   const handleKeyDown = (
     e: React.KeyboardEvent,
-    currentRef: React.RefObject<
-      HTMLInputElement | HTMLSelectElement | HTMLButtonElement
-    >,
-    nextRef?: React.RefObject<
-      HTMLInputElement | HTMLSelectElement | HTMLButtonElement
-    >
+    currentRef: React.RefObject<HTMLInputElement | HTMLSelectElement | HTMLButtonElement | null>,
+    nextRef?: React.RefObject<HTMLInputElement | HTMLSelectElement | HTMLButtonElement | null>
   ) => {
     // Enter key navigation
     if (e.key === 'Enter' && nextRef?.current) {
@@ -175,7 +158,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      const refs = [fullNameRef, emailRef, dobRef, genderRef, submitRef];
+      const refs = [fullNameRef, emailRef, dobRef, genderRef];
       const currentIndex = refs.findIndex((ref) => ref === currentRef);
       if (currentIndex > 0) {
         refs[currentIndex - 1].current?.focus();
@@ -202,7 +185,11 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
       const fieldNumber = Number(e.key);
       const refs = [fullNameRef, emailRef, dobRef, genderRef, submitRef];
       if (fieldNumber >= 1 && fieldNumber <= refs.length) {
-        refs[fieldNumber - 1].current?.focus();
+        if (fieldNumber === refs.length) {
+          submitRef.current?.focus();
+        } else {
+          refs[fieldNumber - 1].current?.focus();
+        }
       }
     }
   };
@@ -236,7 +223,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
           ref={(e) => {
             register('fullName').ref(e);
             firstInputRef.current = e;
-            fullNameRef.current = e;
+            if (e) fullNameRef.current = e;
           }}
           id="fullName"
           type="text"
