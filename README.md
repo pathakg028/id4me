@@ -1,557 +1,730 @@
-component_name: "MobileVerification"
-file_path: "/Users/gauravpathak/Desktop/id4me/src/container/MobileVerification.tsx"
-component_type: "Container Component"
-description: "Multi-step mobile verification and onboarding flow with lazy loading, real-time validation, and performance optimizations"
+# ID4Me Mobile Verification Component Documentation
 
-metadata:
-  created_date: "2024-01-01"
-  last_modified: "2024-12-29"
-  author: "Gaurav Pathak"
-  version: "1.0.0"
-  status: "production"
+## Component Overview
 
-dependencies:
-  react_imports:
-    - "React"
-    - "useRef"
-    - "useEffect" 
-    - "useState"
-    - "lazy"
-    - "Suspense"
-  
-  third_party_libraries:
-    - name: "react-hook-form"
-      imports: ["useForm"]
-      purpose: "Form state management and validation"
-    
-    - name: "custom_components"
-      imports:
-        - "Button"
-        - "PasswordInput"
-        - "PasswordStrengthIndicator"
-        - "Input"
-        - "OTPInput"
-      path: "../components/"
-    
-    - name: "redux_toolkit"
-      imports:
-        - "useAppDispatch"
-        - "useAppSelector"
-      path: "../app/hooks"
-    
-    - name: "utils"
-      imports: ["validatePassword"]
-      path: "../utils/passwordFieldValidation"
-    
-    - name: "custom_hooks"
-      imports: ["useDebounce"]
-      path: "../hooks/useDebounce"
+**Component Name:** MobileVerification  
+**File Path:** `/Users/gauravpathak/Desktop/id4me/src/container/MobileVerification.tsx`  
+**Component Type:** Container Component  
+**Description:** Multi-step mobile verification and onboarding flow with lazy loading, real-time validation, and performance optimizations
 
-lazy_loading:
-  components:
-    profile_form:
-      import_path: "../components/ProfileForm"
-      loading_strategy: "React.lazy()"
-      fallback_component: "ProfileFormLoader"
-      
-  fallback_loader:
-    name: "ProfileFormLoader"
-    type: "functional_component"
-    styling: "flex items-center justify-center p-8"
-    elements:
-      - type: "spinner"
-        classes: "animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"
-      - type: "text"
-        content: "Loading profile form..."
-        classes: "ml-3 text-gray-600"
+## Metadata
 
-component_interface:
-  props:
-    className:
-      type: "string"
-      required: false
-      description: "Additional CSS classes"
+| Property | Value |
+|----------|-------|
+| **Created Date** | 2024-01-01 |
+| **Last Modified** | 2024-12-29 |
+| **Author** | Gaurav Pathak |
+| **Version** | 1.0.0 |
+| **Status** | Production |
 
-type_definitions:
-  mobile_form_values:
-    name: "MobileFormValues"
-    structure:
-      mobile:
-        type: "string"
-        validation: "10-digit number"
+## Dependencies
 
-redux_integration:
-  slice: "mobileVerification"
-  state_properties:
-    - mobile: "string"
-    - verified: "boolean"
-    - loading: "boolean"
-    - error: "string | null"
-    - otpSent: "boolean"
-    - otpLoading: "boolean"
-    - otpError: "string | null"
-    - step: "string"
-  
-  actions:
-    - checkMobileExists
-    - sendOTP
-    - verifyOTP
-    - setMobile
-    - resetVerification
-    - clearError
-    - resetOTP
+### React Imports
+```typescript
+import React, { 
+  useRef, 
+  useEffect, 
+  useState, 
+  lazy, 
+  Suspense 
+} from 'react';
+```
 
-local_state_management:
-  form_state:
-    current_step:
-      type: "number"
-      initial_value: 1
-      description: "Current step in onboarding flow"
-    
-    profile_submitted:
-      type: "boolean"
-      initial_value: false
-      description: "Profile form submission status"
-    
-    otp:
-      type: "string"
-      initial_value: ""
-      description: "OTP input value"
-    
-    countdown:
-      type: "number"
-      initial_value: 0
-      description: "OTP resend countdown timer"
-  
-  password_state:
-    password:
-      type: "string"
-      initial_value: ""
-      validation: "Password strength requirements"
-    
-    confirm_password:
-      type: "string"
-      initial_value: ""
-      validation: "Must match password"
-    
-    password_error:
-      type: "string"
-      initial_value: ""
-      description: "Password validation error message"
-    
-    confirm_password_error:
-      type: "string"
-      initial_value: ""
-      description: "Password confirmation error message"
-    
-    show_welcome:
-      type: "boolean"
-      initial_value: false
-      description: "Show completion screen"
+### Third-Party Libraries
 
-refs_and_timers:
-  input_ref:
-    type: "HTMLInputElement"
-    purpose: "Auto-focus mobile input"
-  
-  timeout_ref:
-    type: "NodeJS.Timeout | null"
-    purpose: "Cleanup timeouts"
+#### React Hook Form
+```typescript
+import { useForm } from 'react-hook-form';
+```
+**Purpose:** Form state management and validation
 
-form_configuration:
-  mobile_form:
-    library: "react-hook-form"
-    default_values:
-      mobile: "localStorage.getItem('mobile') || ''"
-    
-    validation_rules:
-      mobile:
-        required: "Mobile number is required"
-        pattern:
-          value: "/^\\d{10}$/"
-          message: "Enter a valid 10-digit mobile number"
-        onChange: "Real-time sanitization and validation"
-    
-    debounce_configuration:
-      current_mobile: "watchMobile('mobile')"
-      debounced_mobile: "useDebounce(currentMobile, 800)"
+#### Custom Components
+```typescript
+import Button from '../components/Button';
+import PasswordInput from '../components/PasswordInput';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
+import Input from '../components/Input';
+import OTPInput from '../components/OTPInput';
+```
 
-use_effects:
-  auto_focus:
-    description: "Auto-focus mobile input on mount"
-    dependencies: []
-    cleanup: "Clear timeout"
-    
-  mobile_existence_check:
-    description: "Auto-check mobile existence when user stops typing"
-    dependencies: ["debouncedMobile", "dispatch"]
-    trigger_condition: "10-digit valid mobile number"
-    cleanup: "None required"
-    
-  countdown_timer:
-    description: "OTP resend countdown timer"
-    dependencies: ["countdown"]
-    cleanup: "Clear interval timer"
-    
-  local_storage_sync:
-    description: "Auto-save valid mobile to localStorage"
-    dependencies: ["mobile"]
-    cleanup: "None required"
-    
-  keyboard_shortcuts:
-    description: "Global keyboard event handling"
-    dependencies: ["currentStep", "dispatch"]
-    shortcuts:
-      reset_form: "Ctrl/Cmd + R"
-      clear_errors: "Escape"
-    cleanup: "Remove event listeners"
-    
-  auto_verify_otp:
-    description: "Auto-verify OTP when complete"
-    dependencies: ["otp", "mobile", "step", "dispatch"]
-    debounce: "500ms"
-    cleanup: "Clear verification timeout"
+#### Redux Toolkit
+```typescript
+import { useAppDispatch, useAppSelector } from '../app/hooks';
+```
 
-step_flow:
-  step_1_mobile_verification:
-    substeps:
-      input:
-        description: "Mobile number input with real-time validation"
-        features:
-          - real_time_validation
-          - api_integration
-          - debounced_calls
-          - loading_indicators
-          - error_handling
-      
-      otp:
-        description: "OTP verification with auto-verify"
-        features:
-          - auto_verify
-          - manual_verification
-          - resend_functionality
-          - countdown_timer
-          - error_handling
-      
-      verified:
-        description: "Verification success state"
-        features:
-          - success_message
-          - navigation_to_next_step
-  
-  step_2_profile_setup:
-    features:
-      - lazy_loading
-      - suspense_boundary
-      - form_validation
-      - navigation_controls
-    
-    states:
-      not_submitted: "Show ProfileForm with lazy loading"
-      submitted: "Show navigation buttons"
-  
-  step_3_password_creation:
-    features:
-      - password_strength_validation
-      - real_time_matching
-      - completion_screen
-    
-    states:
-      password_setup: "Password creation form"
-      welcome: "Onboarding completion screen"
+#### Utils & Hooks
+```typescript
+import { validatePassword } from '../utils/passwordFieldValidation';
+import { useDebounce } from '../hooks/useDebounce';
+```
 
-progress_tracking:
-  progress_calculation:
-    step_1:
-      verified: "33.33%"
-      otp: "20%"
-      default: "10%"
-    step_2:
-      submitted: "66.66%"
-      default: "50%"
-    step_3:
-      welcome: "100%"
-      default: "80%"
-  
-  step_status:
-    completed: "Step finished"
-    active: "Current step"
-    inactive: "Future step"
+## Lazy Loading Configuration
 
-event_handlers:
-  mobile_submission:
-    name: "onMobileSubmit"
-    parameters: ["MobileFormValues"]
-    actions:
-      - validate_mobile_length
-      - dispatch_set_mobile
-      - check_mobile_exists
-      - send_otp_if_available
-      - start_countdown
-  
-  otp_handling:
-    otp_change:
-      name: "handleOtpChange"
-      parameters: ["string"]
-      actions: ["set_otp", "clear_errors"]
-    
-    otp_complete:
-      name: "handleOtpComplete"
-      parameters: ["string"]
-      actions: ["set_otp", "auto_verify"]
-    
-    verify_otp:
-      name: "handleVerifyOtp"
-      actions: ["dispatch_verify_otp"]
-    
-    resend_otp:
-      name: "handleResendOtp"
-      actions: ["clear_otp", "clear_errors", "send_new_otp", "restart_countdown"]
-    
-    change_mobile:
-      name: "handleChangeMobile"
-      actions: ["reset_otp_state", "clear_countdown"]
-  
-  password_handling:
-    password_submit:
-      name: "onPasswordSubmit"
-      validation:
-        - password_strength
-        - password_matching
-      success_action: "show_welcome_screen"
-  
-  navigation:
-    next_step:
-      name: "handleNext"
-      action: "increment_current_step"
-    
-    previous_step:
-      name: "handleBack"
-      action: "decrement_current_step"
-      special_case: "reset_mobile_on_step_1"
+### Profile Form Component
+```typescript
+const ProfileForm = lazy(() => import('../components/ProfileForm'));
+```
 
-validation_logic:
-  mobile_validation:
-    name: "getMobileValidationStatus"
-    conditions:
-      empty: "null"
-      incomplete: "< 10 digits"
-      invalid: "non-numeric characters"
-      checking: "API call in progress"
-      error: "API error occurred"
-      valid: "10 digits, no errors"
+### Fallback Loader
+```typescript
+const ProfileFormLoader = () => (
+  <div className="flex items-center justify-center p-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+    <span className="ml-3 text-gray-600">Loading profile form...</span>
+  </div>
+);
+```
 
-ui_components:
-  header:
-    title: "Onboarding App"
-    styling: "text-2xl md:text-3xl font-bold mb-4 text-center"
-  
-  progress_section:
-    step_indicators:
-      count: 3
-      labels: ["Mobile", "Profile", "Password"]
-      states: ["active", "completed", "inactive"]
-    
-    progress_bar:
-      type: "animated"
-      calculation: "dynamic based on step completion"
-    
-    progress_text:
-      format: "Step {current} of 3 • {percentage}% Complete"
-  
-  step_content:
-    step_1:
-      mobile_input:
-        type: "tel"
-        placeholder: "Enter your mobile number"
-        validation: "real-time"
-        max_length: 10
-        sanitization: "numeric only"
-      
-      validation_feedback:
-        checking: "🔍 Checking mobile number..."
-        error: "❌ {error_message}"
-        valid: "✅ Mobile number is available"
-        invalid: "❌ Please enter a valid 10-digit mobile number"
-        incomplete: "📱 Enter {remaining} more digits"
-      
-      api_status_display:
-        background: "bg-blue-50"
-        border: "border-blue-200"
-        text: "API connection status and instructions"
-      
-      otp_verification:
-        title: "Verify Your Mobile"
-        description: "6-digit code sent to masked number"
-        otp_input:
-          length: 6
-          auto_focus: true
-          auto_complete: true
-        success_message: "✅ OTP sent successfully! Use: 123456"
-        resend_functionality:
-          countdown: "30 seconds"
-          button_text: "Resend OTP"
-    
-    step_2:
-      lazy_loading:
-        component: "ProfileForm"
-        fallback: "ProfileFormLoader"
-        suspense_boundary: true
-      
-      navigation:
-        back_button: "variant: secondary"
-        next_button: "primary action"
-    
-    step_3:
-      password_creation:
-        password_input: "with visibility toggle"
-        strength_indicator: "real-time validation"
-        confirm_password: "matching validation"
-        submit_button: "disabled until valid"
-      
-      welcome_screen:
-        title: "Welcome Onboard! 🎉"
-        success_message: "✅ Account created successfully!"
-        user_info: "Mobile: {mobile} | Verified: ✅"
-        final_action: "Get Started button"
+**Features:**
+- **Loading Strategy:** React.lazy()
+- **Fallback Component:** ProfileFormLoader
+- **Styling:** Centered with spinner animation
 
-styling_configuration:
-  css_classes:
-    container: "w-full max-w-md md:max-w-lg lg:max-w-xl mx-auto p-4 md:p-8 border rounded-md shadow-md bg-white min-h-screen flex flex-col justify-center"
-    
-    form_elements:
-      input_base: "w-full border border-gray-300 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-      input_error: "border-red-500"
-      input_valid: "border-green-500"
-      button_full: "w-full"
-      button_responsive: "w-full sm:w-auto"
-    
-    feedback_messages:
-      error: "text-red-500 text-sm"
-      success: "text-green-500 text-sm"
-      info: "text-blue-500 text-sm"
-      warning: "text-gray-500 text-sm"
-    
-    step_indicators:
-      container: "step-indicators mb-4"
-      indicator: "step-indicator"
-      circle: "step-circle"
-      label: "step-label"
-      states:
-        active: "active"
-        completed: "completed"
-    
-    progress_bar:
-      container: "progress-container"
-      bar: "progress-bar"
+## Component Interface
 
-performance_optimizations:
-  debouncing:
-    mobile_validation: "800ms delay"
-    otp_verification: "500ms delay"
-  
-  lazy_loading:
-    profile_form: "React.lazy() with Suspense"
-  
-  cleanup_patterns:
-    timeouts: "useEffect cleanup functions"
-    event_listeners: "addEventListener/removeEventListener pairs"
-    intervals: "clearInterval on unmount"
+### Props
+```typescript
+interface MobileVerificationProps {
+  className?: string; // Additional CSS classes (optional)
+}
+```
 
-accessibility:
-  keyboard_navigation:
-    tab_order: "logical flow through form elements"
-    shortcuts:
-      reset: "Ctrl/Cmd + R"
-      clear_errors: "Escape"
-  
-  aria_labels:
-    progress_indicators: "Step completion status"
-    form_inputs: "Input field descriptions"
-    error_messages: "Error announcements"
-  
-  focus_management:
-    auto_focus: "Mobile input on mount"
-    focus_trapping: "Within current step"
+### Type Definitions
+```typescript
+type MobileFormValues = {
+  mobile: string; // 10-digit number validation
+};
+```
 
-security_considerations:
-  input_sanitization:
-    mobile_number: "Numeric characters only, max 10 digits"
-    password: "No client-side storage of password"
-  
-  data_persistence:
-    localStorage: "Only mobile number for UX"
-    sensitive_data: "Not stored client-side"
-  
-  api_security:
-    rate_limiting: "Debounced requests"
-    error_handling: "No sensitive info in error messages"
+## Redux Integration
 
-testing_considerations:
-  unit_tests:
-    - component_rendering
-    - form_validation
-    - state_transitions
-    - event_handlers
-  
-  integration_tests:
-    - full_user_flow
-    - api_interactions
-    - error_scenarios
-    - keyboard_navigation
-  
-  accessibility_tests:
-    - screen_reader_compatibility
-    - keyboard_only_navigation
-    - color_contrast
-    - focus_indicators
+### State Slice: `mobileVerification`
 
-browser_compatibility:
-  target_browsers:
-    - "Chrome 90+"
-    - "Firefox 88+"
-    - "Safari 14+"
-    - "Edge 90+"
-  
-  polyfills_needed: []
-  
-  responsive_design:
-    breakpoints:
-      mobile: "max-width: 768px"
-      tablet: "768px - 1024px"
-      desktop: "1024px+"
+**State Properties:**
+- `mobile: string` - User's mobile number
+- `verified: boolean` - Verification status
+- `loading: boolean` - API loading state
+- `error: string | null` - Error messages
+- `otpSent: boolean` - OTP send status
+- `otpLoading: boolean` - OTP verification loading
+- `otpError: string | null` - OTP-specific errors
+- `step: string` - Current verification step
 
-deployment_considerations:
-  build_optimization:
-    code_splitting: "Automatic with lazy loading"
-    bundle_analysis: "Profile component loading"
-    performance_monitoring: "Core Web Vitals tracking"
-  
-  environment_variables:
-    required: []
-    optional:
-      - "VITE_ENABLE_DEBUG"
-      - "VITE_API_TIMEOUT"
+**Actions:**
+- `checkMobileExists` - Verify mobile number availability
+- `sendOTP` - Send OTP to mobile
+- `verifyOTP` - Verify entered OTP
+- `setMobile` - Set mobile number
+- `resetVerification` - Reset verification state
+- `clearError` - Clear error messages
+- `resetOTP` - Reset OTP state
 
-maintenance_notes:
-  code_quality:
-    typescript_strict: true
-    eslint_rules: "Airbnb configuration"
-    prettier_formatting: true
-  
-  future_enhancements:
-    - biometric_authentication
-    - social_login_integration
-    - multi_language_support
-    - offline_capabilities
-    
-  known_limitations:
-    - requires_javascript_enabled
-    - localStorage_dependency
-    - single_device_session
+## Local State Management
 
-documentation_references:
-  component_docs: "/docs/components/mobile-verification.md"
-  api_integration: "/docs/api/mobile-verification-endpoints.md"
-  testing_guide: "/docs/testing/mobile-verification-tests.md"
-  deployment_guide: "/docs/deployment/container-components.md"
+### Form State
+```typescript
+const [currentStep, setCurrentStep] = useState(1); // Current step (1-3)
+const [profileSubmitted, setProfileSubmitted] = useState(false); // Profile completion
+const [otp, setOtp] = useState(''); // OTP input value
+const [countdown, setCountdown] = useState(0); // Resend countdown timer
+```
+
+### Password State
+```typescript
+const [password, setPassword] = useState(''); // Password input
+const [confirmPassword, setConfirmPassword] = useState(''); // Confirmation
+const [passwordError, setPasswordError] = useState(''); // Password errors
+const [confirmPasswordError, setConfirmPasswordError] = useState(''); // Confirmation errors
+const [showWelcome, setShowWelcome] = useState(false); // Completion screen
+```
+
+### Refs and Timers
+```typescript
+const inputRef = useRef<HTMLInputElement>(null); // Auto-focus mobile input
+const timeoutRef = useRef<NodeJS.Timeout | null>(null); // Cleanup timeouts
+```
+
+## Form Configuration
+
+### Mobile Form Setup
+```typescript
+const {
+  register: registerMobile,
+  handleSubmit: handleSubmitMobile,
+  setValue: setMobileValue,
+  watch: watchMobile,
+  formState: { errors: mobileErrors },
+} = useForm<MobileFormValues>({
+  defaultValues: { 
+    mobile: localStorage.getItem('mobile') || '' 
+  },
+});
+```
+
+### Validation Rules
+```typescript
+mobile: {
+  required: 'Mobile number is required',
+  pattern: {
+    value: /^\d{10}$/,
+    message: 'Enter a valid 10-digit mobile number',
+  },
+  onChange: (e) => {
+    // Real-time sanitization and validation
+    const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+    setMobileValue('mobile', value);
+    dispatch(setMobile(value));
+  },
+}
+```
+
+### Debounce Configuration
+```typescript
+const currentMobile = watchMobile('mobile') || '';
+const debouncedMobile = useDebounce(currentMobile, 800); // 800ms delay
+```
+
+## useEffect Hooks
+
+### 1. Auto-Focus
+```typescript
+useEffect(() => {
+  if (inputRef.current) {
+    timeoutRef.current = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  }
+  return () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
+}, []);
+```
+
+### 2. Mobile Existence Check
+```typescript
+useEffect(() => {
+  if (
+    debouncedMobile &&
+    debouncedMobile.length === 10 &&
+    /^\d{10}$/.test(debouncedMobile)
+  ) {
+    dispatch(checkMobileExists(debouncedMobile));
+  }
+}, [debouncedMobile, dispatch]);
+```
+
+### 3. Countdown Timer
+```typescript
+useEffect(() => {
+  let timer: NodeJS.Timeout;
+  if (countdown > 0) {
+    timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+  }
+  return () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  };
+}, [countdown]);
+```
+
+### 4. Local Storage Sync
+```typescript
+useEffect(() => {
+  if (mobile && mobile.length === 10) {
+    localStorage.setItem('mobile', mobile);
+  }
+}, [mobile]);
+```
+
+### 5. Keyboard Shortcuts
+```typescript
+useEffect(() => {
+  const handleGlobalKeyDown = (e: KeyboardEvent) => {
+    // Ctrl/Cmd + R to reset form
+    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+      e.preventDefault();
+      if (currentStep === 1) {
+        dispatch(resetVerification());
+        setOtp('');
+        setCountdown(0);
+      }
+    }
+    // Escape to clear errors
+    if (e.key === 'Escape') {
+      dispatch(clearError());
+      setPasswordError('');
+      setConfirmPasswordError('');
+    }
+  };
+
+  document.addEventListener('keydown', handleGlobalKeyDown);
+  return () => {
+    document.removeEventListener('keydown', handleGlobalKeyDown);
+  };
+}, [currentStep, dispatch]);
+```
+
+### 6. Auto-Verify OTP
+```typescript
+useEffect(() => {
+  let verifyTimeout: NodeJS.Timeout;
+  if (otp.length === 6 && mobile && step === 'otp') {
+    verifyTimeout = setTimeout(() => {
+      dispatch(verifyOTP({ mobile, otp }));
+    }, 500); // 500ms debounce
+  }
+  return () => {
+    if (verifyTimeout) {
+      clearTimeout(verifyTimeout);
+    }
+  };
+}, [otp, mobile, step, dispatch]);
+```
+
+## Step Flow Architecture
+
+### Step 1: Mobile Verification
+
+#### Sub-steps:
+1. **Input** - Mobile number input with real-time validation
+   - Real-time validation
+   - API integration
+   - Debounced calls
+   - Loading indicators
+   - Error handling
+
+2. **OTP** - OTP verification with auto-verify
+   - Auto-verify functionality
+   - Manual verification option
+   - Resend functionality
+   - Countdown timer
+   - Error handling
+
+3. **Verified** - Verification success state
+   - Success message
+   - Navigation to next step
+
+### Step 2: Profile Setup
+- Lazy loading with Suspense
+- Form validation
+- Navigation controls
+
+**States:**
+- **Not Submitted:** Show ProfileForm with lazy loading
+- **Submitted:** Show navigation buttons
+
+### Step 3: Password Creation
+- Password strength validation
+- Real-time matching validation
+- Completion screen
+
+**States:**
+- **Password Setup:** Password creation form
+- **Welcome:** Onboarding completion screen
+
+## Progress Tracking
+
+### Progress Calculation
+```typescript
+const getProgressPercentage = () => {
+  if (currentStep === 1) {
+    if (step === 'verified' && verified) return 33.33;
+    else if (step === 'otp') return 20;
+    else return 10;
+  } else if (currentStep === 2) {
+    if (profileSubmitted) return 66.66;
+    else return 50;
+  } else if (currentStep === 3) {
+    if (showWelcome) return 100;
+    else return 80;
+  }
+  return 0;
+};
+```
+
+### Step Status
+```typescript
+const getStepStatus = (stepNumber: number) => {
+  if (stepNumber < currentStep) return 'completed';
+  if (stepNumber === currentStep) {
+    if (stepNumber === 1 && verified) return 'completed';
+    if (stepNumber === 2 && profileSubmitted) return 'completed';
+    if (stepNumber === 3 && showWelcome) return 'completed';
+    return 'active';
+  }
+  return 'inactive';
+};
+```
+
+## Event Handlers
+
+### Mobile Submission
+```typescript
+const onMobileSubmit = async (data: MobileFormValues) => {
+  if (!data.mobile || data.mobile.length !== 10) return;
+  
+  dispatch(setMobile(data.mobile));
+  const checkResult = await dispatch(checkMobileExists(data.mobile));
+  
+  if (checkMobileExists.fulfilled.match(checkResult)) {
+    if (!checkResult.payload.exists) {
+      const otpResult = await dispatch(sendOTP(data.mobile));
+      if (sendOTP.fulfilled.match(otpResult)) {
+        setCountdown(30);
+      }
+    }
+  }
+};
+```
+
+### OTP Handling
+```typescript
+// OTP Change
+const handleOtpChange = (value: string) => {
+  setOtp(value);
+  dispatch(clearError());
+};
+
+// OTP Complete (Auto-verify)
+const handleOtpComplete = async (value: string) => {
+  setOtp(value);
+  if (value.length === 6) {
+    await dispatch(verifyOTP({ mobile, otp: value }));
+  }
+};
+
+// Manual Verification
+const handleVerifyOtp = async () => {
+  if (otp.length === 6) {
+    await dispatch(verifyOTP({ mobile, otp }));
+  }
+};
+
+// Resend OTP
+const handleResendOtp = async () => {
+  setOtp('');
+  dispatch(clearError());
+  const result = await dispatch(sendOTP(mobile));
+  if (sendOTP.fulfilled.match(result)) {
+    setCountdown(30);
+  }
+};
+
+// Change Mobile
+const handleChangeMobile = () => {
+  dispatch(resetOTP());
+  setOtp('');
+  setCountdown(0);
+};
+```
+
+### Password Handling
+```typescript
+const onPasswordSubmit = () => {
+  const pwError = validatePassword(password);
+  const cpwError = !confirmPassword
+    ? 'Please confirm your password'
+    : password !== confirmPassword
+      ? 'Passwords do not match'
+      : '';
+
+  setPasswordError(pwError);
+  setConfirmPasswordError(cpwError);
+
+  if (!pwError && !cpwError) {
+    setShowWelcome(true);
+  }
+};
+```
+
+### Navigation
+```typescript
+const handleNext = () => setCurrentStep((prev) => prev + 1);
+const handleBack = () => {
+  setCurrentStep((prev) => Math.max(prev - 1, 1));
+  if (currentStep === 1) {
+    handleChangeMobile();
+  }
+};
+```
+
+## Validation Logic
+
+### Mobile Validation Status
+```typescript
+const getMobileValidationStatus = () => {
+  if (!currentMobile) return null;
+  if (currentMobile.length < 10) return 'incomplete';
+  if (!/^\d{10}$/.test(currentMobile)) return 'invalid';
+  if (loading) return 'checking';
+  if (error) return 'error';
+  return 'valid';
+};
+```
+
+**Status Conditions:**
+- **`null`** - Empty input
+- **`incomplete`** - Less than 10 digits
+- **`invalid`** - Non-numeric characters
+- **`checking`** - API call in progress
+- **`error`** - API error occurred
+- **`valid`** - 10 digits, no errors
+
+## UI Components Structure
+
+### Header
+```jsx
+<h1 className="text-2xl md:text-3xl font-bold mb-4 text-center">
+  Onboarding App
+</h1>
+```
+
+### Progress Section
+
+#### Step Indicators
+- **Count:** 3 steps
+- **Labels:** ["Mobile", "Profile", "Password"]
+- **States:** ["active", "completed", "inactive"]
+
+#### Progress Bar
+- **Type:** Animated
+- **Calculation:** Dynamic based on step completion
+
+#### Progress Text
+- **Format:** "Step {current} of 3 • {percentage}% Complete"
+
+### Step Content
+
+#### Step 1: Mobile Input
+```jsx
+<Input
+  type="tel"
+  placeholder="Enter your mobile number"
+  // Real-time validation and sanitization
+  // Max length: 10, numeric only
+/>
+```
+
+**Validation Feedback:**
+- 🔍 "Checking mobile number..." (checking)
+- ❌ "{error_message}" (error)
+- ✅ "Mobile number is available" (valid)
+- ❌ "Please enter a valid 10-digit mobile number" (invalid)
+- 📱 "Enter {remaining} more digits" (incomplete)
+
+#### Step 1: OTP Verification
+```jsx
+<OTPInput
+  length={6}
+  value={otp}
+  onChange={handleOtpChange}
+  onComplete={handleOtpComplete}
+  autoFocus
+/>
+```
+
+**Features:**
+- Auto-focus and auto-complete
+- Success message: "✅ OTP sent successfully! Use: 123456"
+- 30-second countdown for resend
+
+#### Step 2: Profile Form
+```jsx
+<Suspense fallback={<ProfileFormLoader />}>
+  <ProfileForm
+    className="mb-10"
+    onSubmit={() => setProfileSubmitted(true)}
+  />
+</Suspense>
+```
+
+#### Step 3: Password Creation
+```jsx
+<PasswordInput
+  label="Password"
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+  error={passwordError}
+/>
+<PasswordStrengthIndicator password={password} />
+<PasswordInput
+  label="Confirm Password"
+  value={confirmPassword}
+  onChange={(e) => setConfirmPassword(e.target.value)}
+  error={confirmPasswordError}
+/>
+```
+
+#### Welcome Screen
+```jsx
+<h2 className="text-2xl font-bold text-green-600 mb-4">
+  Welcome Onboard! 🎉
+</h2>
+<p className="text-gray-600 mb-4">
+  Mobile: {mobile} | Verified: ✅
+</p>
+```
+
+## Styling Configuration
+
+### CSS Classes
+
+#### Container
+```css
+.container {
+  @apply w-full max-w-md md:max-w-lg lg:max-w-xl mx-auto p-4 md:p-8 
+         border rounded-md shadow-md bg-white min-h-screen flex flex-col justify-center;
+}
+```
+
+#### Form Elements
+```css
+.input-base {
+  @apply w-full border border-gray-300 rounded-md p-2 mb-2 
+         focus:outline-none focus:ring-2 focus:ring-green-400;
+}
+
+.input-error { @apply border-red-500; }
+.input-valid { @apply border-green-500; }
+.button-full { @apply w-full; }
+.button-responsive { @apply w-full sm:w-auto; }
+```
+
+#### Feedback Messages
+```css
+.error { @apply text-red-500 text-sm; }
+.success { @apply text-green-500 text-sm; }
+.info { @apply text-blue-500 text-sm; }
+.warning { @apply text-gray-500 text-sm; }
+```
+
+#### Step Indicators
+```css
+.step-indicators { @apply mb-4; }
+.step-indicator { /* Custom step indicator styles */ }
+.step-circle { /* Circle with states: active, completed */ }
+.step-label { /* Label with states: active, completed */ }
+```
+
+## Performance Optimizations
+
+### Debouncing
+- **Mobile Validation:** 800ms delay
+- **OTP Verification:** 500ms delay
+
+### Lazy Loading
+- **Profile Form:** React.lazy() with Suspense boundary
+
+### Cleanup Patterns
+- **Timeouts:** useEffect cleanup functions
+- **Event Listeners:** addEventListener/removeEventListener pairs
+- **Intervals:** clearInterval on unmount
+
+## Accessibility Features
+
+### Keyboard Navigation
+- **Tab Order:** Logical flow through form elements
+- **Shortcuts:**
+  - **Reset:** Ctrl/Cmd + R
+  - **Clear Errors:** Escape
+
+### ARIA Labels
+- **Progress Indicators:** Step completion status
+- **Form Inputs:** Input field descriptions
+- **Error Messages:** Error announcements
+
+### Focus Management
+- **Auto-Focus:** Mobile input on mount
+- **Focus Trapping:** Within current step
+
+## Security Considerations
+
+### Input Sanitization
+- **Mobile Number:** Numeric characters only, max 10 digits
+- **Password:** No client-side storage of password
+
+### Data Persistence
+- **localStorage:** Only mobile number for UX
+- **Sensitive Data:** Not stored client-side
+
+### API Security
+- **Rate Limiting:** Debounced requests
+- **Error Handling:** No sensitive info in error messages
+
+## Testing Considerations
+
+### Unit Tests
+- Component rendering
+- Form validation
+- State transitions
+- Event handlers
+
+### Integration Tests
+- Full user flow
+- API interactions
+- Error scenarios
+- Keyboard navigation
+
+### Accessibility Tests
+- Screen reader compatibility
+- Keyboard-only navigation
+- Color contrast
+- Focus indicators
+
+## Browser Compatibility
+
+### Target Browsers
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+### Responsive Design
+- **Mobile:** max-width: 768px
+- **Tablet:** 768px - 1024px
+- **Desktop:** 1024px+
+
+## Deployment Considerations
+
+### Build Optimization
+- **Code Splitting:** Automatic with lazy loading
+- **Bundle Analysis:** Profile component loading
+- **Performance Monitoring:** Core Web Vitals tracking
+
+### Environment Variables
+**Optional:**
+- `VITE_ENABLE_DEBUG`
+- `VITE_API_TIMEOUT`
+
+## Maintenance Notes
+
+### Code Quality
+- **TypeScript:** Strict mode enabled
+- **ESLint:** Airbnb configuration
+- **Prettier:** Code formatting enabled
+
+### Future Enhancements
+- Biometric authentication
+- Social login integration
+- Multi-language support
+- Offline capabilities
+
+### Known Limitations
+- Requires JavaScript enabled
+- localStorage dependency
+- Single device session
+
+## Documentation References
+
+- **Component Docs:** `/docs/components/mobile-verification.md`
+- **API Integration:** `/docs/api/mobile-verification-endpoints.md`
+- **Testing Guide:** `/docs/testing/mobile-verification-tests.md`
+- **Deployment Guide:** `/docs/deployment/container-components.md`
+
+---
+
+**Last Updated:** December
