@@ -1,69 +1,168 @@
-# React + TypeScript + Vite
+# id4me-test
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React app for mobile verification and profile form management using Redux Toolkit, React Hook Form, Zod validation, and JSON Server.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Mobile number verification with Redux state
+- Profile form with fields: Full Name, Email, Date of Birth (required), Gender (optional)
+- Form validation using [zod](https://zod.dev/)
+- Auto-save form data to localStorage
+- Keyboard accessibility and enhanced navigation
+- Loading state management
+- JSON Server for mock backend
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js (v16+ recommended)
+- npm
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/gauravpathak/id4me-test.git
+cd id4me-test
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Running the App
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+#### 1. Start JSON Server
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npx json-server src/db.json --port 3000
 ```
+
+#### 2. Start React App
+
+```bash
+npm run dev
+```
+or
+```bash
+npm start
+```
+
+### Running Tests
+
+```bash
+npm test
+```
+or to run a specific test file:
+```bash
+npx jest src/components/ProfileForm.test.tsx
+```
+
+## Project Structure
+
+```
+src/
+  app/                # Redux store and hooks
+  components/         # React components (ProfileForm, etc.)
+  container/          # Container components (MobileVerification, etc.)
+  features/           # Redux slices
+  reducer/            # Redux slices (legacy)
+  utils/              # Utility functions and validation schemas
+  db.json             # Mock database for JSON Server
+```
+
+## Keyboard Shortcuts
+
+- **Tab**: Move to next field
+- **Enter**: Move to next field
+- **Ctrl+Enter**: Submit form
+- **Ctrl+S**: Save form
+- **Alt+1-5**: Jump to specific fields
+- **Shift+Escape**: Blur field
+
+## License
+
+MIT
+
+---
+```# id4me-test
+
+A React app for mobile verification and profile form management using Redux Toolkit, React Hook Form, Zod validation, and JSON Server.
+
+## Features
+
+- Mobile number verification with Redux state
+- Profile form with fields: Full Name, Email, Date of Birth (required), Gender (optional)
+- Form validation using [zod](https://zod.dev/)
+- Auto-save form data to localStorage
+- Keyboard accessibility and enhanced navigation
+- Loading state management
+- JSON Server for mock backend
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v16+ recommended)
+- npm
+
+### Installation
+
+```bash
+git clone https://github.com/gauravpathak/id4me-test.git
+cd id4me-test
+npm install
+```
+
+### Running the App
+
+#### 1. Start JSON Server
+
+```bash
+npx json-server src/db.json --port 3000
+```
+
+#### 2. Start React App
+
+```bash
+npm run dev
+```
+or
+```bash
+npm start
+```
+
+### Running Tests
+
+```bash
+npm test
+```
+or to run a specific test file:
+```bash
+npx jest src/components/ProfileForm.test.tsx
+```
+
+## Project Structure
+
+```
+src/
+  app/                # Redux store and hooks
+  components/         # React components (ProfileForm, etc.)
+  container/          # Container components (MobileVerification, etc.)
+  features/           # Redux slices
+  reducer/            # Redux slices (legacy)
+  utils/              # Utility functions and validation schemas
+  db.json             # Mock database for JSON Server
+```
+
+## Keyboard Shortcuts
+
+- **Tab**: Move to next field
+- **Enter**: Move to next field
+- **Ctrl+Enter**: Submit form
+- **Ctrl+S**: Save form
+- **Alt+1-5**: Jump to specific fields
+- **Shift+Escape**: Blur field
+
+## License
+
+MIT
+
+---
