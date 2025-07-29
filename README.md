@@ -40,21 +40,12 @@ npx json-server src/db.json --port 3000
 ```bash
 npm run dev
 ```
-or
-```bash
-npm start
-```
 
 ### Running Tests
 
 ```bash
 npm test
 ```
-or to run a specific test file:
-```bash
-npx jest src/components/ProfileForm.test.tsx
-```
-
 ## Project Structure
 
 ```
@@ -84,7 +75,7 @@ MIT
 ---
 ```# id4me-test
 
-A React app for mobile verification and profile form management using Redux Toolkit, React Hook Form, Zod validation, and JSON Server.
+A React app Onboarding staff using Redux Toolkit, React Hook Form, Zod validation, and JSON Server.
 
 ## Features
 
@@ -117,26 +108,6 @@ npm install
 
 ```bash
 npx json-server src/db.json --port 3000
-```
-
-#### 2. Start React App
-
-```bash
-npm run dev
-```
-or
-```bash
-npm start
-```
-
-### Running Tests
-
-```bash
-npm test
-```
-or to run a specific test file:
-```bash
-npx jest src/components/ProfileForm.test.tsx
 ```
 
 ## Project Structure
