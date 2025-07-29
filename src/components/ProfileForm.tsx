@@ -10,6 +10,7 @@ import {
 } from '../reducer/slices/ProfileFormSlice';
 
 type ProfileFormData = z.infer<typeof profileFormSchema>;
+const AUTOSAVE_KEY = "profileFormAutosave";
 
 interface ProfileFormProps {
   className?: string;
@@ -34,9 +35,38 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ className, onSubmit }) => {
     handleSubmit,
     formState: { errors },
     setFocus,
+    setValue,
+    watch,
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
   });
+
+  // Auto-save form data to localStorage on change
+  useEffect(() => {
+    // Only save fields that exist in the schema
+    const formData: Partial<ProfileFormData> = {};
+    Object.keys(profileFormSchema.shape).forEach((key) => {
+      // @ts-expect-error: key may not be a valid keyof ProfileFormData, but we ensure keys are from schema
+      formData[key] = watch(key);
+    });
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(formData));
+  }, [watch()]); // watch() returns all form values and triggers on any change
+
+  // Load autosaved data on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(AUTOSAVE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        Object.entries(parsed).forEach(([key, value]) => {
+          setValue(key as keyof ProfileFormData, value as string | undefined);
+        });
+      } catch {
+        // Ignore JSON parse errors
+      }
+    }
+
+  }, []);
 
   // Auto-focus first field on mount with cleanup
   useEffect(() => {
