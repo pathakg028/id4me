@@ -22,8 +22,8 @@ A React app Onboarding staff using Redux Toolkit, React Hook Form, Zod validatio
 ### Installation
 
 ```bash
-git clone https://github.com/gauravpathak/id4me-test.git
-cd id4me-test
+git clone https://github.com/pathakg028/id4me
+cd id4me
 npm install
 ```
 
