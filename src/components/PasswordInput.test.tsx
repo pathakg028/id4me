@@ -1,12 +1,14 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import PasswordInput from './PasswordInput';
 
+console.log(React, "for testing purpose");
 describe('PasswordInput Component - Key Tests', () => {
   const defaultProps = {
     label: 'Password',
     value: '',
-    onChange: () => {},
+    onChange: () => { },
   };
 
   // ✅ Test 1: Basic Rendering (Safe tests only)
