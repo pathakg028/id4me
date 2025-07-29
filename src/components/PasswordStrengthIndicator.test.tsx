@@ -1,7 +1,9 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 
+console.log(React, "for testing purpose");
 describe('PasswordStrengthIndicator Component', () => {
   // Basic rendering tests
   describe('Rendering', () => {
@@ -12,7 +14,7 @@ describe('PasswordStrengthIndicator Component', () => {
 
     it('renders nothing when password is undefined', () => {
       const { container } = render(
-        <PasswordStrengthIndicator password={undefined as any} />
+        <PasswordStrengthIndicator password="" />
       );
       expect(container.firstChild).toBeNull();
     });

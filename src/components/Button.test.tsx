@@ -1,7 +1,9 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Button from './Button';
 
+console.log(React, "for testing purpose");
 describe('Button Component', () => {
   // Basic rendering tests
   describe('Rendering', () => {

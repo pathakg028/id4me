@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Input from './Input';
@@ -25,7 +26,7 @@ describe('Input Component', () => {
   });
 
   it('renders with controlled value', () => {
-    render(<Input value="Controlled value" onChange={() => {}} />);
+    render(<Input value="Controlled value" onChange={() => { }} />);
     const input = screen.getByDisplayValue('Controlled value');
     expect(input).toBeInTheDocument();
   });
@@ -223,7 +224,7 @@ describe('Accessibility', () => {
 // Edge cases
 describe('Edge Cases', () => {
   it('handles empty string values', () => {
-    render(<Input value="" onChange={() => {}} />);
+    render(<Input value="" onChange={() => { }} />);
     const input = screen.getByRole('textbox') as HTMLInputElement;
     expect(input.value).toBe('');
   });
