@@ -1,6 +1,6 @@
 # id4me-test
 
-A React app for onboarding employees using Redux Toolkit, React Hook Form, Zod validation, and JSON Server.
+A React app for mobile verification and profile form management using Redux Toolkit, React Hook Form, Zod validation, and JSON Server.
 
 ## Features
 
